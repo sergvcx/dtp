@@ -2,22 +2,22 @@
     "version": 6,
     "configurePresets": [
         {
-          "name": "NeuroMatrix-Debug",
+          "name": "nm-debug",
           "displayName": "NeuroMatrix Debug",
           "description": "Default build using Ninja generator",
           "generator": "Ninja",
-          "binaryDir": "${sourceDir}/build/nm-debug",
+          "binaryDir": "${sourceDir}/build/nm/debug",
           "toolchainFile": "cmake-nmc-gcc-toolchain/nmc-gcc-toolchain.cmake",
           "cacheVariables": {
             "CMAKE_BUILD_TYPE":"Debug"
           }
         },
         {
-          "name": "NeuroMatrix-Release",
+          "name": "nm-release",
           "displayName": "NeuroMatrix Release",
           "description": "Build Release using Ninja generator",
           "generator": "Ninja",
-          "binaryDir": "${sourceDir}/build/nm-release",
+          "binaryDir": "${sourceDir}/build/nm/release",
           "toolchainFile": "cmake-nmc-gcc-toolchain/nmc-gcc-toolchain.cmake",
           "cacheVariables": {
             "CMAKE_BUILD_TYPE":"Release"
