@@ -1,0 +1,55 @@
+{
+    "version": 6,
+    "configurePresets": [
+        {
+          "name": "NeuroMatrix-Debug",
+          "displayName": "NeuroMatrix Debug",
+          "description": "Default build using Ninja generator",
+          "generator": "Ninja",
+          "binaryDir": "${sourceDir}/build/nm-debug",
+          "toolchainFile": "cmake-nmc-gcc-toolchain/nmc-gcc-toolchain.cmake",
+          "cacheVariables": {
+            "CMAKE_BUILD_TYPE":"Debug"
+          }
+        },
+        {
+          "name": "NeuroMatrix-Release",
+          "displayName": "NeuroMatrix Release",
+          "description": "Build Release using Ninja generator",
+          "generator": "Ninja",
+          "binaryDir": "${sourceDir}/build/nm-release",
+          "toolchainFile": "cmake-nmc-gcc-toolchain/nmc-gcc-toolchain.cmake",
+          "cacheVariables": {
+            "CMAKE_BUILD_TYPE":"Release"
+          }
+        },
+        {
+          "name": "x86-ninja",
+          "displayName": "x86",
+          "description": "Default build using Ninja Multi-Config generator",
+          "generator": "Ninja Multi-Config",
+          "binaryDir": "${sourceDir}/build/x86-ninja"
+        },
+        {
+          "name": "x86-msvc",
+          "displayName": "x86-msvc",
+		      "binaryDir": "${sourceDir}/build/x86-msvc",
+          "architecture": {
+            "value": "x64",
+            "strategy": "set"
+          },
+          "condition": {
+            "type": "equals",
+            "lhs": "${hostSystemName}",
+            "rhs": "Windows"
+          },
+          "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "Debug",
+            "CMAKE_CONFIGURATION_TYPES": "Debug;Release",
+            "CMAKE_C_COMPILER": "cl",
+            "CMAKE_CXX_COMPILER": "cl",
+            "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}"
+          }
+        }
+    ]
+}
