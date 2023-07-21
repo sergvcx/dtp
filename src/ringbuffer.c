@@ -14,7 +14,7 @@ typedef struct{
 
 void dtpInitRingBuffer(DtpRingBuffer *ring_buffer, void* data, int capacity){
     ring_buffer->data = (int*)data;
-    ring_buffer->size_of_element = sizeOfElement;
+    ring_buffer->size_of_element = size_of_element;
     ring_buffer->capacity = capacity;
     ring_buffer->read_semaphore = 0;
     ring_buffer->write_semaphore = capacity;
@@ -24,7 +24,7 @@ void dtpInitRingBuffer(DtpRingBuffer *ring_buffer, void* data, int capacity){
 
 void dtpInitRingBuffer(DtpRingBuffer *ring_buffer, void* data, int capacity){
     ring_buffer->data = (int*)data;
-    ring_buffer->size_of_element = sizeOfElement;
+    ring_buffer->size_of_element = size_of_element;
     ring_buffer->capacity = capacity;
     ring_buffer->read_semaphore = 0;
     ring_buffer->write_semaphore = capacity;

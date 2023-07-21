@@ -1,4 +1,5 @@
 
+typedef struct DtpRingBuffer DtpRingBuffer;
 void dtpInitRingBuffer(DtpRingBuffer *ring_buffer, void* data, int capacity);
 
 int dtpRingBufferGetTail(DtpRingBuffer *ring_buffer);
@@ -23,4 +24,4 @@ void dtpRingBufferCapturedRead(DtpRingBuffer *ring_buffer);
 void dtpRingBufferReleaseRead(DtpRingBuffer *ring_buffer);
 
 void dtpRingBufferCapturedWrite(DtpRingBuffer *ring_buffer);
-void dtpRingBufferReleaseWrite(DtpRingBuffer *ring_buffer)
+void dtpRingBufferReleaseWrite(DtpRingBuffer *ring_buffer);

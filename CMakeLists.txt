@@ -13,3 +13,4 @@ set(sources
 	)
 
 target_sources(dtp PRIVATE ${sources})
+target_include_directories(dtp PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)

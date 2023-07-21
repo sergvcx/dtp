@@ -1,28 +1,15 @@
-#include "nmw/dtp.h"
+#include "dtp/dtp.h"
 #include <cstring>
 #include "stdio.h"
 
 #define MAX_SIZE 16
 
 
-enum DtpType{
-    DEBR_NONE,
-    DEBR_LINK,
-    DEBR_FILE,
-    DEBR_CUSTOM,
-    DEBR_SHM
-};
-
 struct DtpObject{
     int fd;
-    int type;
     int is_enabled;
     void *user_data;
     DtpImplementaion implementaion;
-    //DtpWriteFuncT writeFunc;
-    //DtpReadFuncT readFunc;
-    //DtpFlushFuncT flushFunc;
-    //DtpCloseFuncT closeFunc;
     DtpObject(){
         is_enabled = 0;
     }
@@ -32,6 +19,7 @@ struct DtpObject{
 struct DtpFileData{
     char filename[256];
     FILE *file;
+    DtpImplementaion impl;
 };
 
 static size_t fileWrite(void *user_data, const void *buf, size_t size){
@@ -80,7 +68,6 @@ extern "C"{
             if(objects[i].is_enabled == 0){
                 objects[i].fd = i + 1;
                 objects[i].user_data = user_data;
-                objects[i].type = DEBR_SHM;
                 objects[i].implementaion.read = readFunc;
                 objects[i].implementaion.write = writeFunc;
                 objects[i].implementaion.flush = 0;
@@ -105,7 +92,6 @@ extern "C"{
                 objects[i].fd = i + 1;
                 int no = desc - 1;
                 objects[i].user_data = objects[no].user_data;
-                objects[i].type = objects[no].type;
                 objects[i].implementaion.read = objects[no].implementaion.read;
                 objects[i].implementaion.write = objects[no].implementaion.write;
                 objects[i].implementaion.close = objects[no].implementaion.close;
@@ -120,26 +106,17 @@ extern "C"{
 
     int dtpOpenFile(const char *filename, const char *mode){
         printf("open desc via file\n");
-        for(int i = 0; i < MAX_SIZE; i++){
-            if(objects[i].is_enabled == 0){
-                objects[i].fd = i + 1;
-                DtpFileData *data = new DtpFileData();
-                if(data == 0){
-                    return -1;
-                }
-                strcpy(data->filename, filename);
-                data->file = fopen(filename, mode);                
-                objects[i].user_data = data;
-                objects[i].type = DEBR_FILE;
-                objects[i].implementaion.read = fileRead;
-                objects[i].implementaion.write = fileWrite;
-                objects[i].implementaion.flush = fileFlush;
-                objects[i].implementaion.close = fileClose;
-                objects[i].is_enabled = 1;
-                return objects[i].fd;
-            }
+        DtpFileData *data = new DtpFileData();
+        if(data == 0){
+            return -1;
         }
-        return -1;
+        strcpy(data->filename, filename);
+        data->file = fopen(filename, mode);
+        data->impl.read = fileRead;
+        data->impl.write = fileWrite;
+        data->impl.flush = fileFlush;
+        data->impl.close = fileClose;
+        return dtpOpen(data, &data->impl);
     }
 #ifndef __NM__
     int dtpOpenFileDesc(int fd, const char *mode){
@@ -153,7 +130,6 @@ extern "C"{
                 }
                 data->file = fdopen(fd, mode);                
                 objects[i].user_data = data;
-                objects[i].type = DEBR_FILE;
                 objects[i].implementaion.read = fileRead;
                 objects[i].implementaion.write = fileWrite;
                 objects[i].implementaion.flush = fileFlush;
@@ -215,7 +191,6 @@ extern "C"{
             if(objects[i].is_enabled == 0){
                 objects[i].fd = i + 1;
                 objects[i].user_data = user_data;
-                objects[i].type = DEBR_FILE;
                 objects[i].implementaion.read = fileRead;
                 objects[i].implementaion.write = fileWrite;
                 objects[i].implementaion.flush = fileFlush;
