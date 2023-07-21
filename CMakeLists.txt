@@ -2,6 +2,13 @@ cmake_minimum_required(VERSION 3.16.0 FATAL_ERROR)
 
 project(dtp)
 
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_C_EXTENSIONS OFF)
+
 add_library(dtp)
 add_library(dtp::dtp ALIAS dtp)
 
@@ -11,6 +18,8 @@ set(public_headers
 set(sources
 	${public_headers}
 	src/dtp.cpp
+	src/ringbuffer.c
+	src/ringbuffer.h
 	)
 
 target_sources(dtp PRIVATE ${sources})

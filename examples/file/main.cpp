@@ -3,7 +3,7 @@
 
 int main(){
     int desc = dtpOpenFile("simple.txt", "w+");
-    char *str = "This is text\n";
+    const char *str = "This is text\n";
     dtpWrite(desc, str, strlen(str) * 4);
     dtpFlush(desc);
     dtpClose(desc);

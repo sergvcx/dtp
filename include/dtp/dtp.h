@@ -1,5 +1,5 @@
-#ifndef __DEBR_H_INCLUDED__
-#define __DEBR_H_INCLUDED__
+#ifndef __DTP_H_INCLUDED__
+#define __DTP_H_INCLUDED__
 
 #include <stdlib.h>
 #include "stdint.h"
@@ -44,4 +44,4 @@ extern "C" {
 }
 #endif
 
-#endif //__DEBR_H_INCLUDED__
+#endif //__DTP_H_INCLUDED__

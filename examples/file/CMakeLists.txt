@@ -15,6 +15,7 @@ target_link_directories(dtp-file-example
     )
 target_include_directories(dtp-file-example PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../../include)
 
+if(NM)
 target_link_options(dtp-file-example PUBLIC 
     -Wl,-T${CMAKE_CURRENT_LIST_DIR}/mc12101brd.lds
     -Xlinker -Map=${CMAKE_CURRENT_BINARY_DIR}/demo.map
@@ -23,3 +24,4 @@ target_link_options(dtp-file-example PUBLIC
         -lnm6407_io_nmc
     -Wl,--no-whole-archive
     )
+endif()
