@@ -18,10 +18,11 @@ struct DebrObject{
     int type;
     int is_enabled;
     void *user_data;
-    DebrWriteFuncT writeFunc;
-    DebrReadFuncT readFunc;
-    DebrFlushFuncT flushFunc;
-    DebrCloseFuncT closeFunc;
+    DebrImplementaion implementaion;
+    //DebrWriteFuncT writeFunc;
+    //DebrReadFuncT readFunc;
+    //DebrFlushFuncT flushFunc;
+    //DebrCloseFuncT closeFunc;
     DebrObject(){
         is_enabled = 0;
     }
@@ -61,6 +62,13 @@ static int fileFlush(void *user_data){
     return fflush(fileData->file);
 }
 
+static int fileClose(void *user_data){
+    DebrFileData *fileData = (DebrFileData *)user_data;
+    fclose(fileData->file);
+    delete fileData;
+    return 0;
+}
+
 #ifdef __NM__
 __attribute__ ((section (".data.nmw.debr"))) 
 #endif
@@ -73,10 +81,10 @@ extern "C"{
                 objects[i].fd = i + 1;
                 objects[i].user_data = user_data;
                 objects[i].type = DEBR_SHM;
-                objects[i].readFunc = readFunc;
-                objects[i].writeFunc = writeFunc;
-                objects[i].flushFunc = 0;
-                objects[i].closeFunc = 0;
+                objects[i].implementaion.read = readFunc;
+                objects[i].implementaion.write = writeFunc;
+                objects[i].implementaion.flush = 0;
+                objects[i].implementaion.close = 0;
                 objects[i].is_enabled = 1;
                 return objects[i].fd;
             }
@@ -98,9 +106,10 @@ extern "C"{
                 int no = desc - 1;
                 objects[i].user_data = objects[no].user_data;
                 objects[i].type = objects[no].type;
-                objects[i].readFunc = objects[no].readFunc;
-                objects[i].writeFunc = objects[no].writeFunc;
-                objects[i].closeFunc = 0;
+                objects[i].implementaion.read = objects[no].implementaion.read;
+                objects[i].implementaion.write = objects[no].implementaion.write;
+                objects[i].implementaion.close = objects[no].implementaion.close;
+                objects[i].implementaion.flush = objects[no].implementaion.flush;
                 objects[i].is_enabled = 1;
                 return objects[i].fd;
             }
@@ -122,9 +131,10 @@ extern "C"{
                 data->file = fopen(filename, mode);                
                 objects[i].user_data = data;
                 objects[i].type = DEBR_FILE;
-                objects[i].readFunc = fileRead;
-                objects[i].writeFunc = fileWrite;
-                objects[i].flushFunc = fileFlush;
+                objects[i].implementaion.read = fileRead;
+                objects[i].implementaion.write = fileWrite;
+                objects[i].implementaion.flush = fileFlush;
+                objects[i].implementaion.close = fileClose;
                 objects[i].is_enabled = 1;
                 return objects[i].fd;
             }
@@ -144,9 +154,10 @@ extern "C"{
                 data->file = fdopen(fd, mode);                
                 objects[i].user_data = data;
                 objects[i].type = DEBR_FILE;
-                objects[i].readFunc = fileRead;
-                objects[i].writeFunc = fileWrite;
-                objects[i].flushFunc = fileFlush;
+                objects[i].implementaion.read = fileRead;
+                objects[i].implementaion.write = fileWrite;
+                objects[i].implementaion.flush = fileFlush;
+                objects[i].implementaion.close = fileClose;
                 objects[i].is_enabled = 1;
                 return objects[i].fd;
             }
@@ -157,12 +168,12 @@ extern "C"{
 
     int debrWrite(int desc, const void *data, size_t size){
         int no = desc - 1;
-        return objects[no].writeFunc(objects[no].user_data, data, size);
+        return objects[no].implementaion.write(objects[no].user_data, data, size);
     }
 
     int debrRead(int desc, void *data, size_t size){
         int no = desc - 1;
-        return objects[no].readFunc(objects[no].user_data, data, size);
+        return objects[no].implementaion.read(objects[no].user_data, data, size);
     }
 
 	int debrWriteM(int desc, const void *data, size_t size, int width, int stride){
@@ -183,8 +194,8 @@ extern "C"{
 
     int debrFlush(int desc){
         int no = desc - 1;
-        if(objects[no].flushFunc){
-            return objects[no].flushFunc(objects[no].user_data);
+        if(objects[no].implementaion.flush){
+            return objects[no].implementaion.flush(objects[no].user_data);
         } else {
             return 0;
         }
@@ -192,10 +203,26 @@ extern "C"{
 
     int debrClose(int desc){
         int no = desc - 1;
-        if(objects[no].closeFunc){
-            objects[no].closeFunc(objects[no].user_data);
+        if(objects[no].implementaion.close){
+            objects[no].implementaion.close(objects[no].user_data);
         }
         objects[no].is_enabled = 0;
         return 0;
+    }
+
+    int debrOpen(void *user_data, DebrImplementaion *implementation){
+        for(int i = 0; i < MAX_SIZE; i++){
+            if(objects[i].is_enabled == 0){
+                objects[i].fd = i + 1;
+                objects[i].user_data = user_data;
+                objects[i].type = DEBR_FILE;
+                objects[i].implementaion.read = fileRead;
+                objects[i].implementaion.write = fileWrite;
+                objects[i].implementaion.flush = fileFlush;
+                objects[i].implementaion.close = fileClose;
+                objects[i].is_enabled = 1;
+                return objects[i].fd;
+            }
+        }
     }
 }
