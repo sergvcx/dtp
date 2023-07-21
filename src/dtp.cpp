@@ -1,11 +1,11 @@
-#include "nmw/debr.h"
+#include "nmw/dtp.h"
 #include <cstring>
 #include "stdio.h"
 
 #define MAX_SIZE 16
 
 
-enum DebrType{
+enum DtpType{
     DEBR_NONE,
     DEBR_LINK,
     DEBR_FILE,
@@ -13,34 +13,34 @@ enum DebrType{
     DEBR_SHM
 };
 
-struct DebrObject{
+struct DtpObject{
     int fd;
     int type;
     int is_enabled;
     void *user_data;
-    DebrImplementaion implementaion;
-    //DebrWriteFuncT writeFunc;
-    //DebrReadFuncT readFunc;
-    //DebrFlushFuncT flushFunc;
-    //DebrCloseFuncT closeFunc;
-    DebrObject(){
+    DtpImplementaion implementaion;
+    //DtpWriteFuncT writeFunc;
+    //DtpReadFuncT readFunc;
+    //DtpFlushFuncT flushFunc;
+    //DtpCloseFuncT closeFunc;
+    DtpObject(){
         is_enabled = 0;
     }
 };
 
 
-struct DebrFileData{
+struct DtpFileData{
     char filename[256];
     FILE *file;
 };
 
 static size_t fileWrite(void *user_data, const void *buf, size_t size){
-    DebrFileData *fileData = (DebrFileData *)user_data;
+    DtpFileData *fileData = (DtpFileData *)user_data;
     return fwrite(buf, sizeof(int), size / 4, fileData->file);
 }
 
 static size_t fileRead(void *user_data, void *buf, size_t size){
-    DebrFileData *fileData = (DebrFileData *)user_data;
+    DtpFileData *fileData = (DtpFileData *)user_data;
 
     int fsize0 = ftell(fileData->file);
     fseek(fileData->file, 0, SEEK_END);
@@ -58,24 +58,24 @@ static size_t fileRead(void *user_data, void *buf, size_t size){
 }
 
 static int fileFlush(void *user_data){
-    DebrFileData *fileData = (DebrFileData *)user_data;
+    DtpFileData *fileData = (DtpFileData *)user_data;
     return fflush(fileData->file);
 }
 
 static int fileClose(void *user_data){
-    DebrFileData *fileData = (DebrFileData *)user_data;
+    DtpFileData *fileData = (DtpFileData *)user_data;
     fclose(fileData->file);
     delete fileData;
     return 0;
 }
 
 #ifdef __NM__
-__attribute__ ((section (".data.nmw.debr"))) 
+__attribute__ ((section (".data.nmw.dtp"))) 
 #endif
-static DebrObject objects[MAX_SIZE];
+static DtpObject objects[MAX_SIZE];
 
 extern "C"{
-    int debrOpenCustom(void *user_data, DebrReadFuncT readFunc, DebrWriteFuncT writeFunc){
+    int dtpOpenCustom(void *user_data, DtpReadFuncT readFunc, DtpWriteFuncT writeFunc){
         for(int i = 0; i < MAX_SIZE; i++){
             if(objects[i].is_enabled == 0){
                 objects[i].fd = i + 1;
@@ -92,14 +92,14 @@ extern "C"{
         return -1;
     }
 
-    int debrOpenLink(int port){
+    int dtpOpenLink(int port){
         return -1;
     }
-    int debrOpenDma(){
+    int dtpOpenDma(){
         return -1;
     }
 
-    int debrOpenDesc(int desc){
+    int dtpOpenDesc(int desc){
         for(int i = 0; i < MAX_SIZE; i++){
             if(objects[i].is_enabled == 0){
                 objects[i].fd = i + 1;
@@ -118,12 +118,12 @@ extern "C"{
     }
 
 
-    int debrOpenFile(const char *filename, const char *mode){
+    int dtpOpenFile(const char *filename, const char *mode){
         printf("open desc via file\n");
         for(int i = 0; i < MAX_SIZE; i++){
             if(objects[i].is_enabled == 0){
                 objects[i].fd = i + 1;
-                DebrFileData *data = new DebrFileData();
+                DtpFileData *data = new DtpFileData();
                 if(data == 0){
                     return -1;
                 }
@@ -142,12 +142,12 @@ extern "C"{
         return -1;
     }
 #ifndef __NM__
-    int debrOpenFileDesc(int fd, const char *mode){
+    int dtpOpenFileDesc(int fd, const char *mode){
         printf("open desc via file desc\n");
         for(int i = 0; i < MAX_SIZE; i++){
             if(objects[i].is_enabled == 0){
                 objects[i].fd = i + 1;
-                DebrFileData *data = new DebrFileData();
+                DtpFileData *data = new DtpFileData();
                 if(data == 0){
                     return -1;
                 }
@@ -166,33 +166,33 @@ extern "C"{
     }
 #endif //__NM__
 
-    int debrWrite(int desc, const void *data, size_t size){
+    int dtpWrite(int desc, const void *data, size_t size){
         int no = desc - 1;
         return objects[no].implementaion.write(objects[no].user_data, data, size);
     }
 
-    int debrRead(int desc, void *data, size_t size){
+    int dtpRead(int desc, void *data, size_t size){
         int no = desc - 1;
         return objects[no].implementaion.read(objects[no].user_data, data, size);
     }
 
-	int debrWriteM(int desc, const void *data, size_t size, int width, int stride){
+	int dtpWriteM(int desc, const void *data, size_t size, int width, int stride){
 		return -1;
 	}
 
-    int debrReadM(int desc, void *data, size_t size, int width, int stride){
+    int dtpReadM(int desc, void *data, size_t size, int width, int stride){
 		return -1;
 	}
 
-	int debrWriteP(int desc, const void *data, size_t size, int offset){
+	int dtpWriteP(int desc, const void *data, size_t size, int offset){
 		return -1;
 	}
 
-    int debrReadP(int desc, void *data, size_t size, int offset){
+    int dtpReadP(int desc, void *data, size_t size, int offset){
 		return -1;
 	}	
 
-    int debrFlush(int desc){
+    int dtpFlush(int desc){
         int no = desc - 1;
         if(objects[no].implementaion.flush){
             return objects[no].implementaion.flush(objects[no].user_data);
@@ -201,7 +201,7 @@ extern "C"{
         }
     }
 
-    int debrClose(int desc){
+    int dtpClose(int desc){
         int no = desc - 1;
         if(objects[no].implementaion.close){
             objects[no].implementaion.close(objects[no].user_data);
@@ -210,7 +210,7 @@ extern "C"{
         return 0;
     }
 
-    int debrOpen(void *user_data, DebrImplementaion *implementation){
+    int dtpOpen(void *user_data, DtpImplementaion *implementation){
         for(int i = 0; i < MAX_SIZE; i++){
             if(objects[i].is_enabled == 0){
                 objects[i].fd = i + 1;

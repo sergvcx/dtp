@@ -1,15 +1,15 @@
 cmake_minimum_required(VERSION 3.16.0 FATAL_ERROR)
 
-project(debr)
+project(dtp)
 
-add_library(debr)
+add_library(dtp)
 
 set(public_headers
-	include/debr/debr.h
+	include/dtp/dtp.h
 	)
 set(sources
 	${public_headers}
-	src/debr.cpp
+	src/dtp.cpp
 	)
 
-target_sources(debr PRIVATE ${sources})
+target_sources(dtp PRIVATE ${sources})
