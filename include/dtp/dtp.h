@@ -23,22 +23,20 @@ typedef struct {
 extern "C" {
 #endif
 
-    int dtpOpenLink(int port);
-    int dtpOpenDma();
     int dtpOpenFile(const char *filename, const char *mode);
     int dtpOpenDesc(int desc);
     int dtpOpenCustom(void *user_data, DtpReadFuncT readFunc, DtpWriteFuncT writeFunc);
     int dtpOpen(void *user_data, DtpImplementaion *implementation);
     int dtpOpenFileDesc(int fd, const char *mode);
 
-    int dtpWrite(int desc, const void *data, size_t size);
-    int dtpRead(int desc, void *data, size_t size);
-	int dtpWriteM(int desc, const void *data, size_t size, int width, int stride);
-    int dtpReadM(int desc, void *data, size_t size, int width, int stride);
-	int dtpWriteP(int desc, const void *data, size_t size, int offset);
-    int dtpReadP(int desc, void *data, size_t size, int offset);
-	int dtpSetWriteCallback(int desc, void *user_data);
-	int dtpSetReadCallback(int desc, void *user_data);
+    size_t dtpWrite(int desc, const void *data, size_t size);
+    size_t dtpRead(int desc, void *data, size_t size);
+	size_t dtpWriteM(int desc, const void *data, size_t size, int width, int stride);
+    size_t dtpReadM(int desc, void *data, size_t size, int width, int stride);
+	size_t dtpWriteP(int desc, const void *data, size_t size, int offset);
+    size_t dtpReadP(int desc, void *data, size_t size, int offset);
+	// int dtpSetWriteCallback(int desc, void *user_data); ?
+	// int dtpSetReadCallback(int desc, void *user_data);  ?
     int dtpFlush(int desc);
     int dtpClose(int desc);
 

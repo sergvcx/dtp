@@ -19,7 +19,6 @@ struct DtpObject{
 struct DtpFileData{
     char filename[256];
     FILE *file;
-    DtpImplementaion impl;
 };
 
 static size_t fileWrite(void *user_data, const void *buf, size_t size){
@@ -29,20 +28,7 @@ static size_t fileWrite(void *user_data, const void *buf, size_t size){
 
 static size_t fileRead(void *user_data, void *buf, size_t size){
     DtpFileData *fileData = (DtpFileData *)user_data;
-
-    int fsize0 = ftell(fileData->file);
-    fseek(fileData->file, 0, SEEK_END);
-    int fsize = ftell(fileData->file);
-    fseek(fileData->file, fsize0, SEEK_SET);
-
-    int elements = fread(buf, sizeof(int), size / 4, fileData->file);
-    int *dst = (int*)buf;
-    if(dst[0] == 0x6370000) {
-        fseek(fileData->file, fsize0, SEEK_SET);
-        return 0;
-    }
-
-    return elements;
+    return fread(buf, sizeof(int), size / 4, fileData->file);
 }
 
 static int fileFlush(void *user_data){
@@ -63,27 +49,20 @@ __attribute__ ((section (".data.nmw.dtp")))
 static DtpObject objects[MAX_SIZE];
 
 extern "C"{
-    int dtpOpenCustom(void *user_data, DtpReadFuncT readFunc, DtpWriteFuncT writeFunc){
+
+    int dtpOpen(void *user_data, DtpImplementaion *implementation){
         for(int i = 0; i < MAX_SIZE; i++){
             if(objects[i].is_enabled == 0){
                 objects[i].fd = i + 1;
                 objects[i].user_data = user_data;
-                objects[i].implementaion.read = readFunc;
-                objects[i].implementaion.write = writeFunc;
-                objects[i].implementaion.flush = 0;
-                objects[i].implementaion.close = 0;
+                objects[i].implementaion.read = fileRead;
+                objects[i].implementaion.write = fileWrite;
+                objects[i].implementaion.flush = fileFlush;
+                objects[i].implementaion.close = fileClose;
                 objects[i].is_enabled = 1;
                 return objects[i].fd;
             }
         }
-        return -1;
-    }
-
-    int dtpOpenLink(int port){
-        return -1;
-    }
-    int dtpOpenDma(){
-        return -1;
     }
 
     int dtpOpenDesc(int desc){
@@ -105,18 +84,19 @@ extern "C"{
 
 
     int dtpOpenFile(const char *filename, const char *mode){
-        printf("open desc via file\n");
         DtpFileData *data = new DtpFileData();
         if(data == 0){
             return -1;
         }
         strcpy(data->filename, filename);
+
+        DtpImplementaion impl;
         data->file = fopen(filename, mode);
-        data->impl.read = fileRead;
-        data->impl.write = fileWrite;
-        data->impl.flush = fileFlush;
-        data->impl.close = fileClose;
-        return dtpOpen(data, &data->impl);
+        impl.read = fileRead;
+        impl.write = fileWrite;
+        impl.flush = fileFlush;
+        impl.close = fileClose;
+        return dtpOpen(data, &impl);
     }
 #ifndef __NM__
     int dtpOpenFileDesc(int fd, const char *mode){
@@ -142,29 +122,29 @@ extern "C"{
     }
 #endif //__NM__
 
-    int dtpWrite(int desc, const void *data, size_t size){
+    size_t dtpWrite(int desc, const void *data, size_t size){
         int no = desc - 1;
         return objects[no].implementaion.write(objects[no].user_data, data, size);
     }
 
-    int dtpRead(int desc, void *data, size_t size){
+    size_t dtpRead(int desc, void *data, size_t size){
         int no = desc - 1;
         return objects[no].implementaion.read(objects[no].user_data, data, size);
     }
 
-	int dtpWriteM(int desc, const void *data, size_t size, int width, int stride){
+	size_t dtpWriteM(int desc, const void *data, size_t size, int width, int stride){
 		return -1;
 	}
 
-    int dtpReadM(int desc, void *data, size_t size, int width, int stride){
+    size_t dtpReadM(int desc, void *data, size_t size, int width, int stride){
 		return -1;
 	}
 
-	int dtpWriteP(int desc, const void *data, size_t size, int offset){
+	size_t dtpWriteP(int desc, const void *data, size_t size, int offset){
 		return -1;
 	}
 
-    int dtpReadP(int desc, void *data, size_t size, int offset){
+    size_t dtpReadP(int desc, void *data, size_t size, int offset){
 		return -1;
 	}	
 
@@ -186,18 +166,5 @@ extern "C"{
         return 0;
     }
 
-    int dtpOpen(void *user_data, DtpImplementaion *implementation){
-        for(int i = 0; i < MAX_SIZE; i++){
-            if(objects[i].is_enabled == 0){
-                objects[i].fd = i + 1;
-                objects[i].user_data = user_data;
-                objects[i].implementaion.read = fileRead;
-                objects[i].implementaion.write = fileWrite;
-                objects[i].implementaion.flush = fileFlush;
-                objects[i].implementaion.close = fileClose;
-                objects[i].is_enabled = 1;
-                return objects[i].fd;
-            }
-        }
-    }
+
 }
