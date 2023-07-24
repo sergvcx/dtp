@@ -115,11 +115,81 @@ void test_readwrite_whenChoosedShmemMultipleWriteRead_shouldReturnCorrect(){
 
 }
 
+void test_readwrite_whenChoosedShmemNoRead_shouldReturnZero(){
+    printf("%s\n", __FUNCTION__);
+    // Arrange
+    DtpRingBuffer32 ringbuffer;
+    dtpInitRingBuffer(&ringbuffer, dmaBuff, SIZE32);
+    int d = dtpOpenShmem(&ringbuffer);
+    int dst[2];
+
+    // Act
+    int readSize = dtpRead(d, dst, 2 * 4);
+
+    // Asserts
+    uassert(readSize == 0);
+
+    // Free
+    dtpClose(d);
+}
+
+void test_readwrite_whenChoosedShmemFullWrite_shouldReturnZero(){
+    printf("%s\n", __FUNCTION__);
+    // Arrange
+    DtpRingBuffer32 ringbuffer;
+    dtpInitRingBuffer(&ringbuffer, dmaBuff, SIZE32);
+    int d = dtpOpenShmem(&ringbuffer);
+    int src[SIZE32];
+    dtpWrite(d, src, SIZE32 * 4);
+
+    // Act
+    int writeSize = dtpWrite(d, src, SIZE32 * 4);
+
+    // Asserts
+    uassert(writeSize == 0);
+
+    // Free
+    dtpClose(d);
+}
+
+void test_readwrite_whenMultupleDesc_shouldDoneCorrect(){
+    printf("%s\n", __FUNCTION__);
+    // Arrange
+    DtpRingBuffer32 ringbuffer;
+    dtpInitRingBuffer(&ringbuffer, dmaBuff, SIZE32);
+    int d1 = dtpOpenShmem(&ringbuffer);
+    int d2 = dtpOpenShmem(&ringbuffer);
+    const int size32 = 4;
+    int src[size32];
+    int dst[size32];
+    for(int i = 0; i < size32; i++){
+        src[i] = i;
+        dst[i] = 0xCDCDCDCD;
+    }    
+
+    // Act
+    int writeSize = dtpWrite(d1, src, size32 * 4);
+    printf("writeSize %d\n", writeSize);
+
+    int readSize = dtpRead(d2, dst, size32 * 4);
+    printf("readSize %d\n", readSize);
+
+    // Assert
+    uassert(writeSize == size32 * 4);
+    uassert(readSize == size32 * 4);
+    for(int i = 0; i < size32; i++){
+        uassert(src[i] == dst[i]);
+    }
+}
+
 int main(){
     test_open_whenChoosedShmem_shouldReturnGt0();
     test_readwrite_whenChoosedShmem_shouldReturnCorrect();
     test_readwrite_whenChoosedShmemWriteGtThenSize_shouldReturnLtSize();
     test_readwrite_whenChoosedShmemMultipleWriteRead_shouldReturnCorrect();
+    test_readwrite_whenChoosedShmemNoRead_shouldReturnZero();
+    test_readwrite_whenChoosedShmemFullWrite_shouldReturnZero();
+    test_readwrite_whenMultupleDesc_shouldDoneCorrect();
     printf("ALL TESTS PASSED!!\n");
     return 0;
 }

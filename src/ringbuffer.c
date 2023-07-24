@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "dtp/ringbuffer.h"
 #include "malloc.h"
+#include "stdio.h"
 
 typedef struct{
     DtpRingBuffer32 *ringbuffer;
