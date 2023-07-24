@@ -5,19 +5,34 @@
 #include "stdint.h"
 
 typedef void (*DtpCallbackFuncT)(void *data);
+typedef union {
+    int   sigval_int;
+    void *sigval_pointer;
+} DtpSignalData;
 
-typedef size_t(*DtpWriteFuncT)(void *user_data, const void *buf, size_t size);
-typedef size_t(*DtpReadFuncT)(void *user_data, void *buf, size_t size);
-typedef int (*DtpFlushFuncT)(void *user_data);
-typedef int (*DtpCloseFuncT)(void *user_data);
+typedef void (*DtpNotifyFunctionT)(DtpSignalData *data);
 
 typedef struct {
     size_t (*write)(void *user_data, const void *buf, size_t size);
     size_t (*read)(void *user_data, void *buf, size_t size);
+    size_t (*write_matrix)(void *user_data, const void *buf, size_t size, int width, int stride);
+    size_t (*read_matrix)(void *user_data, const void *buf, size_t size, int width, int stride);
     int (*flush)(void *user_data);
     int (*close)(void *user_data);
 } DtpImplementaion;
 
+typedef struct {
+    int desc;
+    volatile void *buf;
+    size_t nbytes;
+    int width;
+    int stride;
+    DtpSignalData sigval;
+    void *user_data;
+    DtpNotifyFunctionT sigevent;
+} DtpASync;
+
+//all sizes, widths, strides and offsets in bytes
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,7 +40,6 @@ extern "C" {
 
     int dtpOpenFile(const char *filename, const char *mode);
     int dtpOpenDesc(int desc);
-    int dtpOpenCustom(void *user_data, DtpReadFuncT readFunc, DtpWriteFuncT writeFunc);
     int dtpOpen(void *user_data, DtpImplementaion *implementation);
     int dtpOpenFileDesc(int fd, const char *mode);
 
@@ -35,8 +49,9 @@ extern "C" {
     size_t dtpReadM(int desc, void *data, size_t size, int width, int stride);
 	size_t dtpWriteP(int desc, const void *data, size_t size, int offset);
     size_t dtpReadP(int desc, void *data, size_t size, int offset);
-	// int dtpSetWriteCallback(int desc, void *user_data); ?
-	// int dtpSetReadCallback(int desc, void *user_data);  ?
+
+    size_t dtpReadA(DtpASync *task);
+    size_t dtpWriteA(DtpASync *task);	
     int dtpFlush(int desc);
     int dtpClose(int desc);
 

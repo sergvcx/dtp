@@ -14,16 +14,22 @@ add_library(dtp::dtp ALIAS dtp)
 
 set(public_headers
 	include/dtp/dtp.h
+	include/dtp/ringbuffer.h
 	)
 set(sources
 	${public_headers}
 	src/dtp.cpp
 	src/ringbuffer.c
-	src/ringbuffer.h
+	src/file.cpp
 	)
 
 target_sources(dtp PRIVATE ${sources})
-target_include_directories(dtp PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
+target_include_directories(dtp 
+	PUBLIC
+		${CMAKE_CURRENT_LIST_DIR}/include
+	PRIVATE 
+		${CMAKE_CURRENT_LIST_DIR}/src
+		)
 
 set_target_properties(dtp PROPERTIES
 	OUTPUT_NAME dtp
@@ -34,4 +40,5 @@ set_target_properties(dtp PROPERTIES
 	)
 
 add_subdirectory(examples)
+add_subdirectory(tests)
 

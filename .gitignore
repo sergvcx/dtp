@@ -11,6 +11,10 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 
+#Visual Studio
+.vs/
+.vscode/
+
 #build
 build/
 lib/

@@ -1,6 +1,7 @@
 #include "dtp/dtp.h"
 #include <cstring>
 #include "stdio.h"
+#include "dtp/ringbuffer.h"
 
 #define MAX_SIZE 16
 
@@ -16,10 +17,12 @@ struct DtpObject{
 };
 
 
+
 struct DtpFileData{
     char filename[256];
     FILE *file;
 };
+
 
 static size_t fileWrite(void *user_data, const void *buf, size_t size){
     DtpFileData *fileData = (DtpFileData *)user_data;
@@ -43,9 +46,6 @@ static int fileClose(void *user_data){
     return 0;
 }
 
-#ifdef __NM__
-__attribute__ ((section (".data.nmw.dtp"))) 
-#endif
 static DtpObject objects[MAX_SIZE];
 
 extern "C"{
@@ -55,14 +55,17 @@ extern "C"{
             if(objects[i].is_enabled == 0){
                 objects[i].fd = i + 1;
                 objects[i].user_data = user_data;
-                objects[i].implementaion.read = fileRead;
-                objects[i].implementaion.write = fileWrite;
-                objects[i].implementaion.flush = fileFlush;
-                objects[i].implementaion.close = fileClose;
+                objects[i].implementaion.read  = implementation->read;
+                objects[i].implementaion.write = implementation->write;
+                objects[i].implementaion.read_matrix  = implementation->read_matrix;
+                objects[i].implementaion.write_matrix = implementation->write_matrix;                
+                objects[i].implementaion.flush = implementation->flush;
+                objects[i].implementaion.close = implementation->close;
                 objects[i].is_enabled = 1;
                 return objects[i].fd;
             }
         }
+        return -1;
     }
 
     int dtpOpenDesc(int desc){
@@ -100,7 +103,6 @@ extern "C"{
     }
 #ifndef __NM__
     int dtpOpenFileDesc(int fd, const char *mode){
-        printf("open desc via file desc\n");
         for(int i = 0; i < MAX_SIZE; i++){
             if(objects[i].is_enabled == 0){
                 objects[i].fd = i + 1;
