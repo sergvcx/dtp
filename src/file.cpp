@@ -47,24 +47,24 @@ extern "C" {
     }
 #ifndef __NM__
     int dtpOpenFileDesc(int fd, const char *mode){
-        for(int i = 0; i < MAX_SIZE; i++){
-            if(objects[i].is_enabled == 0){
-                objects[i].fd = i + 1;
-                DtpFileData *data = new DtpFileData();
-                if(data == 0){
-                    return -1;
-                }
-                data->file = fdopen(fd, mode);                
-                objects[i].user_data = data;
-                objects[i].implementaion.read = fileRead;
-                objects[i].implementaion.write = fileWrite;
-                objects[i].implementaion.flush = fileFlush;
-                objects[i].implementaion.close = fileClose;
-                objects[i].is_enabled = 1;
-                return objects[i].fd;
-            }
-        }
-        return -1;
+        // for(int i = 0; i < MAX_SIZE; i++){
+        //     if(objects[i].is_enabled == 0){
+        //         objects[i].fd = i + 1;
+        //         DtpFileData *data = new DtpFileData();
+        //         if(data == 0){
+        //             return -1;
+        //         }
+        //         data->file = fdopen(fd, mode);                
+        //         objects[i].user_data = data;
+        //         objects[i].implementaion.read = fileRead;
+        //         objects[i].implementaion.write = fileWrite;
+        //         objects[i].implementaion.flush = fileFlush;
+        //         objects[i].implementaion.close = fileClose;
+        //         objects[i].is_enabled = 1;
+        //         return objects[i].fd;
+        //     }
+        // }
+        // return -1;
     }
 #endif //__NM__
 
