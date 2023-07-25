@@ -83,6 +83,9 @@ int dtpRingBufferGetTail(DtpRingBuffer32 *ring_buffer){
 int dtpRingBufferGetHead(DtpRingBuffer32 *ring_buffer){
     return ring_buffer->head;
 }
+int *dtpRingBufferGetPtr(DtpRingBuffer32 *ring_buffer, int index){
+    return ring_buffer->data + index % ring_buffer->capacity;
+}
 
 int dtpRingBufferGetCapacity(DtpRingBuffer32 *ring_buffer){
     return ring_buffer->capacity;
@@ -102,12 +105,12 @@ void dtpRingBufferPush(DtpRingBuffer32 *ring_buffer, const void *data, int count
     int head = dtpRingBufferGetHead(ring_buffer);
     if(head % ring_buffer->capacity + count < ring_buffer->capacity){
         int *src = (int*)data;
-        int *dst = ring_buffer->data + head % ring_buffer->capacity;
+        int *dst = dtpRingBufferGetPtr(ring_buffer, head);
         dtpCopyRisc(src, dst, count);
     } else {
         int first_part = ring_buffer->capacity - head % ring_buffer->capacity;
         int *src = (int*)data;
-        int *dst = ring_buffer->data + head % ring_buffer->capacity;            
+        int *dst = dtpRingBufferGetPtr(ring_buffer, head);
         dtpCopyRisc(src, dst, first_part);
 
         int second_part = count - first_part;
@@ -123,12 +126,12 @@ void dtpRingBufferPop(DtpRingBuffer32 *ring_buffer, void *data, int count){
     dtpRingBufferCapturedRead(ring_buffer, count);   
     int tail = dtpRingBufferGetTail(ring_buffer);
     if(tail % ring_buffer->capacity + count < ring_buffer->capacity){
-        int *src = ring_buffer->data + tail % ring_buffer->capacity;
+        int *src = dtpRingBufferGetPtr(ring_buffer, tail);
         int *dst = (int*)data;        
         dtpCopyRisc(src, dst, count);
     } else {
         int first_part = ring_buffer->capacity - tail % ring_buffer->capacity;
-        int *src = ring_buffer->data + tail % ring_buffer->capacity;            
+        int *src = dtpRingBufferGetPtr(ring_buffer, tail); 
         int *dst = (int*)data;        
         dtpCopyRisc(src, dst, first_part);
 
