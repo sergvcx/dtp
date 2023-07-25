@@ -64,7 +64,7 @@ extern "C" {
         //         return objects[i].fd;
         //     }
         // }
-        // return -1;
+        return -1;
     }
 #endif //__NM__
 

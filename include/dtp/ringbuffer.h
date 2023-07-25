@@ -2,18 +2,6 @@
 #define __DTP_RINGBUFFER_H_INCLUDED__
 #include "dtp/dtp.h"
 
-// enum DtpRingBufferSize{
-//     DTP_SIZE_4,
-//     DTP_SIZE_8,
-//     DTP_SIZE_16,
-//     DTP_SIZE_32,
-//     DTP_SIZE_64,
-//     DTP_SIZE_128,
-//     DTP_SIZE_256,
-//     DTP_SIZE_512,
-//     DTP_SIZE_1024
-// };
-//typedef struct DtpRingBuffer32 DtpRingBuffer32;
 
 typedef struct {
     int *data;
@@ -24,15 +12,6 @@ typedef struct {
     volatile size_t head;
     volatile size_t tail;
 } DtpRingBuffer32;
-
-// typedef struct DtpRingBuffer8 DtpRingBuffer8;
-// typedef struct DtpRingBuffer16 DtpRingBuffer16;
-// typedef struct DtpRingBuffer32 DtpRingBuffer32;
-// typedef struct DtpRingBuffer64 DtpRingBuffer64;
-// typedef struct DtpRingBuffer256 DtpRingBuffer128;
-// typedef struct DtpRingBuffer512 DtpRingBuffer256;
-// typedef struct DtpRingBuffer1024 DtpRingBuffer1024;
-// typedef struct DtpRingBuffer2048 DtpRingBuffer2048;
 
 #ifdef __cplusplus
 extern "C" {
