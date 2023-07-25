@@ -1,7 +1,4 @@
 #include "dtp/dtp.h"
-#include <cstring>
-#include "stdio.h"
-#include "dtp/ringbuffer.h"
 
 #define MAX_SIZE 16
 
@@ -18,33 +15,6 @@ struct DtpObject{
 
 
 
-struct DtpFileData{
-    char filename[256];
-    FILE *file;
-};
-
-
-static size_t fileWrite(void *user_data, const void *buf, size_t size){
-    DtpFileData *fileData = (DtpFileData *)user_data;
-    return fwrite(buf, sizeof(int), size / 4, fileData->file);
-}
-
-static size_t fileRead(void *user_data, void *buf, size_t size){
-    DtpFileData *fileData = (DtpFileData *)user_data;
-    return fread(buf, sizeof(int), size / 4, fileData->file);
-}
-
-static int fileFlush(void *user_data){
-    DtpFileData *fileData = (DtpFileData *)user_data;
-    return fflush(fileData->file);
-}
-
-static int fileClose(void *user_data){
-    DtpFileData *fileData = (DtpFileData *)user_data;
-    fclose(fileData->file);
-    delete fileData;
-    return 0;
-}
 
 static DtpObject objects[MAX_SIZE];
 
@@ -86,43 +56,6 @@ extern "C"{
     }
 
 
-    int dtpOpenFile(const char *filename, const char *mode){
-        DtpFileData *data = new DtpFileData();
-        if(data == 0){
-            return -1;
-        }
-        strcpy(data->filename, filename);
-
-        DtpImplementaion impl;
-        data->file = fopen(filename, mode);
-        impl.read = fileRead;
-        impl.write = fileWrite;
-        impl.flush = fileFlush;
-        impl.close = fileClose;
-        return dtpOpen(data, &impl);
-    }
-#ifndef __NM__
-    int dtpOpenFileDesc(int fd, const char *mode){
-        for(int i = 0; i < MAX_SIZE; i++){
-            if(objects[i].is_enabled == 0){
-                objects[i].fd = i + 1;
-                DtpFileData *data = new DtpFileData();
-                if(data == 0){
-                    return -1;
-                }
-                data->file = fdopen(fd, mode);                
-                objects[i].user_data = data;
-                objects[i].implementaion.read = fileRead;
-                objects[i].implementaion.write = fileWrite;
-                objects[i].implementaion.flush = fileFlush;
-                objects[i].implementaion.close = fileClose;
-                objects[i].is_enabled = 1;
-                return objects[i].fd;
-            }
-        }
-        return -1;
-    }
-#endif //__NM__
 
     size_t dtpWrite(int desc, const void *data, size_t size){
         int no = desc - 1;
@@ -135,11 +68,13 @@ extern "C"{
     }
 
 	size_t dtpWriteM(int desc, const void *data, size_t size, int width, int stride){
-		return -1;
+        int no = desc - 1;
+		return objects[no].implementaion.write_matrix(objects[no].user_data, data, size, width, stride);
 	}
 
     size_t dtpReadM(int desc, void *data, size_t size, int width, int stride){
-		return -1;
+		int no = desc - 1;
+		return objects[no].implementaion.read_matrix(objects[no].user_data, data, size, width, stride);
 	}
 
 	size_t dtpWriteP(int desc, const void *data, size_t size, int offset){
@@ -165,6 +100,18 @@ extern "C"{
             objects[no].implementaion.close(objects[no].user_data);
         }
         objects[no].is_enabled = 0;
+        return 0;
+    }
+
+    //void dtpSetCallback(int desc, DtpNotifyFunctionT notifyFunc, DtpSignalData *signal);
+    size_t dtpReadA(DtpASync *task){
+        
+        //dtpSetCallback(task->desc, task->sigevent, task->sigval);
+        //return objects[no].implementaion.read(objects[no].user_data, data, size);
+        return 0;
+    }
+
+    size_t dtpWriteA(DtpASync *task){
         return 0;
     }
 

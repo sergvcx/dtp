@@ -21,12 +21,20 @@ typedef struct {
     int (*close)(void *user_data);
 } DtpImplementaion;
 
+enum DtpSignal{
+    DTP_SIG_NONE,
+    DTP_SIG_SIGNAL,
+    DTP_SIG_CALLBACK
+};
+
 typedef struct {
     int desc;
     volatile void *buf;
     size_t nbytes;
     int width;
     int stride;
+
+    int sig_type;
     DtpSignalData sigval;
     void *user_data;
     DtpNotifyFunctionT sigevent;
@@ -39,6 +47,7 @@ extern "C" {
 #endif
 
     int dtpOpenFile(const char *filename, const char *mode);
+    int dtpOpenLink(int port);
     int dtpOpenDesc(int desc);
     int dtpOpen(void *user_data, DtpImplementaion *implementation);
     int dtpOpenFileDesc(int fd, const char *mode);
@@ -51,7 +60,7 @@ extern "C" {
     size_t dtpReadP(int desc, void *data, size_t size, int offset);
 
     size_t dtpReadA(DtpASync *task);
-    size_t dtpWriteA(DtpASync *task);	
+    size_t dtpWriteA(DtpASync *task);
     int dtpFlush(int desc);
     int dtpClose(int desc);
 
