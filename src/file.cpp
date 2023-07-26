@@ -37,12 +37,12 @@ extern "C" {
         }
         strcpy(data->filename, filename);
 
-        DtpImplementaion impl;
+        DtpImplemention impl;
         data->file = fopen(filename, mode);
-        impl.read = fileRead;
-        impl.write = fileWrite;
+        impl.recv = fileRead;
+        impl.send = fileWrite;
         impl.flush = fileFlush;
-        impl.close = fileClose;
+        impl.destroy = fileClose;
         return dtpOpen(data, &impl);
     }
 #ifndef __NM__
@@ -56,10 +56,10 @@ extern "C" {
         //         }
         //         data->file = fdopen(fd, mode);                
         //         objects[i].user_data = data;
-        //         objects[i].implementaion.read = fileRead;
-        //         objects[i].implementaion.write = fileWrite;
+        //         objects[i].implementaion.recv = fileRead;
+        //         objects[i].implementaion.send = fileWrite;
         //         objects[i].implementaion.flush = fileFlush;
-        //         objects[i].implementaion.close = fileClose;
+        //         objects[i].implementaion.destroy = fileClose;
         //         objects[i].is_enabled = 1;
         //         return objects[i].fd;
         //     }

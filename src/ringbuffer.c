@@ -6,6 +6,7 @@
 
 typedef struct{
     DtpRingBuffer32 *ringbuffer;
+    DtpRingBuffer32 rb;
 } DtpShmemData;
 
 static size_t shmemRead(void *user_data, void *buf, size_t size){
@@ -39,6 +40,17 @@ static int shmemClose(void *user_data){
     return 0;
 };
 
+int dtpOpenUsb(uintptr_t ringbuffer){
+    return -1;   
+}
+
+int dtpOpenBuffer(void *buffer, size_t size){
+    DtpShmemData *shmemData = (DtpShmemData *)malloc(sizeof(DtpShmemData));
+    if(shmemData == 0) return 0;
+
+    dtpInitRingBuffer(&shmemData->rb, buffer, size);
+
+}
 
 
 int dtpOpenShmem(DtpRingBuffer32 *ringbuffer){
@@ -47,10 +59,10 @@ int dtpOpenShmem(DtpRingBuffer32 *ringbuffer){
         return -1;
     }
     shmemData->ringbuffer = ringbuffer;
-    DtpImplementaion impl;
-    impl.write = shmemWrite;
-    impl.read = shmemRead;
-    impl.close = shmemClose;
+    DtpImplemention impl;
+    impl.send = shmemWrite;
+    impl.recv = shmemRead;
+    impl.destroy = shmemClose;
     impl.flush = 0;
     int fd = dtpOpen(shmemData, &impl);
     return fd;

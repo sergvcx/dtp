@@ -4,28 +4,40 @@
 #include <stdlib.h>
 #include "stdint.h"
 
+typedef struct DtpRingBuffer32 DtpRingBuffer32;
+
 typedef void (*DtpCallbackFuncT)(void *data);
 typedef union {
     int   sigval_int;
     void *sigval_pointer;
 } DtpSignalData;
 
-typedef void (*DtpNotifyFunctionT)(DtpSignalData *data);
+typedef void (*DtpNotifyFunctionT)(void *data);
+
+//typedef void (*DtpWriteFunctionT)(void *user_data, const void *buf, size_t size);
+//typedef void (*DtpReadFunctionT)(void *user_data, const void *buf, size_t size);
 
 typedef struct {
-    size_t (*write)(void *user_data, const void *buf, size_t size);
-    size_t (*read)(void *user_data, void *buf, size_t size);
-    size_t (*write_matrix)(void *user_data, const void *buf, size_t size, int width, int stride);
-    size_t (*read_matrix)(void *user_data, const void *buf, size_t size, int width, int stride);
+    size_t (*send)(void *user_data, const void *buf, size_t size);
+    size_t (*recv)(void *user_data, void *buf, size_t size);
+    size_t (*send_matrix)(void *user_data, const void *buf, size_t size, int width, int stride);
+    size_t (*recv_matrix)(void *user_data, void *buf, size_t size, int width, int stride);
+    int (*wait_recv)(void *user_data);
+    int (*wait_send)(void *user_data);
     int (*flush)(void *user_data);
-    int (*close)(void *user_data);
-} DtpImplementaion;
+    int (*destroy)(void *user_data);
+} DtpImplemention;
 
 enum DtpSignal{
     DTP_SIG_NONE,
-    DTP_SIG_SIGNAL,
     DTP_SIG_CALLBACK
 };
+
+typedef enum {
+    DTP_TASK_NONE,
+    DTP_TASK_1D,
+    DTP_TASK_2D
+} DtpAsyncType;
 
 typedef struct {
     int desc;
@@ -34,8 +46,8 @@ typedef struct {
     int width;
     int stride;
 
-    int sig_type;
-    DtpSignalData sigval;
+    DtpAsyncType type;
+    void *event_data;
     void *user_data;
     DtpNotifyFunctionT sigevent;
 } DtpASync;
@@ -46,23 +58,35 @@ typedef struct {
 extern "C" {
 #endif
 
+    int dtpOpenBuffer(void *buffer, size_t size);
+
+    int dtpOpenShmem(DtpRingBuffer32 *ringbuffer);
+    int dtpOpenUsb(uintptr_t buffer_addr);
     int dtpOpenFile(const char *filename, const char *mode);
     int dtpOpenLink(int port);
     int dtpOpenDesc(int desc);
-    int dtpOpen(void *user_data, DtpImplementaion *implementation);
     int dtpOpenFileDesc(int fd, const char *mode);
 
+    int dtpOpen(void *user_data, DtpImplemention *implementation);
+
+    size_t dtpSend(int desc, const void *data, size_t size);
+    size_t dtpRecv(int desc, void *data, size_t size);
+	size_t dtpSendM(int desc, const void *data, size_t size, int width, int stride);
+    size_t dtpRecvM(int desc, void *data, size_t size, int width, int stride);
+
+    size_t dtpAsyncRecv(DtpASync *task);
+    size_t dtpAsyncSend(DtpASync *task);
+    int dtpWaitSend(int desc);
+    int dtpWaitRecv(int desc);
+    int dtpClose(int desc);
+
+    // deprecated
     size_t dtpWrite(int desc, const void *data, size_t size);
     size_t dtpRead(int desc, void *data, size_t size);
 	size_t dtpWriteM(int desc, const void *data, size_t size, int width, int stride);
     size_t dtpReadM(int desc, void *data, size_t size, int width, int stride);
-	size_t dtpWriteP(int desc, const void *data, size_t size, int offset);
-    size_t dtpReadP(int desc, void *data, size_t size, int offset);
-
-    size_t dtpReadA(DtpASync *task);
-    size_t dtpWriteA(DtpASync *task);
     int dtpFlush(int desc);
-    int dtpClose(int desc);
+    
 
 #ifdef __cplusplus
 }

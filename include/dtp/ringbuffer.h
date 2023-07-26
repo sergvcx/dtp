@@ -3,7 +3,7 @@
 #include "dtp/dtp.h"
 
 
-typedef struct {
+typedef struct DtpRingBuffer32{
     int *data;
     volatile size_t capacity;
 
@@ -16,7 +16,7 @@ typedef struct {
 #ifdef __cplusplus
 extern "C" {
 #endif
-    int dtpOpenShmem(DtpRingBuffer32 *ringbuffer);
+    //DtpRingBuffer32 *dtpRingBufferCreate(void *data, int capacity);
 
     void dtpInitRingBuffer(DtpRingBuffer32 *ring_buffer, void* data, int capacity);
 
