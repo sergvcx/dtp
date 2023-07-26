@@ -26,16 +26,23 @@ set(sources
 	src/ringbuffer.c
 	src/file.cpp
 	src/nm6407/link.c
-	src/nm6407/dtpLinkInit.S
-	src/nm6407/dtpLinkStart.S
 	src/link-core.h
 	)
 
-set_source_files_properties(
+if(NM)
+list(APPEND sources
 	src/nm6407/dtpLinkInit.S
 	src/nm6407/dtpLinkStart.S
-	PROPERTIES
-	COMPILE_FLAGS "-mgas")
+	)
+	set_source_files_properties(
+		src/nm6407/dtpLinkInit.S
+		src/nm6407/dtpLinkStart.S
+		PROPERTIES
+		COMPILE_FLAGS "-mgas")
+endif()
+
+
+
 
 target_sources(dtp PRIVATE ${sources})
 target_include_directories(dtp 
