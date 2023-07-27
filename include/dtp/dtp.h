@@ -52,16 +52,26 @@ typedef struct {
     DtpNotifyFunctionT sigevent;
 } DtpASync;
 
+typedef enum{
+    DTP_TYPE,
+    DTP_RING_BUFFER_ADDR,
+    DTP_RING_BUFFER_ADDR_HI,
+} DtpProperty;
+
+typedef enum{
+    DTP_NONE,
+    DTP_BUFFER
+} DtpType;
+
 //all sizes, widths, strides and offsets in bytes
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    int dtpOpenBuffer(void *buffer, size_t size);
+    //int dtpOpenBuffer(void *buffer, size_t size);
 
-    int dtpOpenShmem(DtpRingBuffer32 *ringbuffer);
-    int dtpOpenUsb(uintptr_t buffer_addr);
+    int dtpOpenBuffer(DtpRingBuffer32 *ringbuffer);
     int dtpOpenFile(const char *filename, const char *mode);
     int dtpOpenLink(int port);
     int dtpOpenDesc(int desc);
@@ -73,6 +83,8 @@ extern "C" {
     size_t dtpRecv(int desc, void *data, size_t size);
 	size_t dtpSendM(int desc, const void *data, size_t size, int width, int stride);
     size_t dtpRecvM(int desc, void *data, size_t size, int width, int stride);
+
+    void *dtpGetUserData(int desc);
 
     size_t dtpAsyncRecv(DtpASync *task);
     size_t dtpAsyncSend(DtpASync *task);

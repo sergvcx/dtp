@@ -3,70 +3,19 @@
 #include "dtp/ringbuffer.h"
 #include "malloc.h"
 #include "stdio.h"
+#include "dtp-core.h"
 
-typedef struct{
-    DtpRingBuffer32 *ringbuffer;
-    DtpRingBuffer32 rb;
-} DtpShmemData;
+typedef struct DtpRingBuffer32{
+    int *data;
+    volatile size_t capacity;
 
-static size_t shmemRead(void *user_data, void *buf, size_t size){
-    DtpShmemData *data = (DtpShmemData *)user_data;
-
-    int available32 = dtpRingBufferGetHead(data->ringbuffer) - dtpRingBufferGetTail(data->ringbuffer);
-
-    available32 = (available32 < size / 4) ? available32 : size / 4;
-
-    dtpRingBufferPop(data->ringbuffer, buf, available32);
-
-    return available32 * 4;
-
-}
-
-static size_t shmemWrite(void *user_data, const void *buf, size_t size){
-    DtpShmemData *data = (DtpShmemData *)user_data;
-
-    int available32 = dtpRingBufferGetTail(data->ringbuffer) + dtpRingBufferGetCapacity(data->ringbuffer) - dtpRingBufferGetHead(data->ringbuffer);
-
-    available32 = (available32 < size / 4) ? available32 : size / 4;    
-
-    dtpRingBufferPush(data->ringbuffer, buf, available32);
-    
-    return available32 * 4;
-}
-
-static int shmemClose(void *user_data){
-    DtpShmemData *data = (DtpShmemData *)user_data;
-    free(data);
-    return 0;
-};
-
-int dtpOpenUsb(uintptr_t ringbuffer){
-    return -1;   
-}
-
-int dtpOpenBuffer(void *buffer, size_t size){
-    DtpShmemData *shmemData = (DtpShmemData *)malloc(sizeof(DtpShmemData));
-    if(shmemData == 0) return 0;
-
-    dtpInitRingBuffer(&shmemData->rb, buffer, size);
-
-}
+    volatile size_t read_semaphore;
+    volatile size_t write_semaphore;
+    volatile size_t head;
+    volatile size_t tail;
+} DtpRingBuffer32;
 
 
-int dtpOpenShmem(DtpRingBuffer32 *ringbuffer){
-    DtpShmemData *shmemData = (DtpShmemData *)malloc(sizeof(DtpShmemData));
-    if(shmemData == 0){
-        return -1;
-    }
-    shmemData->ringbuffer = ringbuffer;
-    DtpImplemention impl;
-    impl.send = shmemWrite;
-    impl.recv = shmemRead;
-    impl.destroy = shmemClose;
-    impl.flush = 0;
-    int fd = dtpOpen(shmemData, &impl);
-    return fd;
-}
 
 void dtpCopyRisc(int *src, int* dst, int size){
     for(int i = 0; i < size; i++){
@@ -79,13 +28,15 @@ int dtpRingBufferGetSizeOfElem(DtpRingBuffer32 *ring_buffer){
 }
 
 
-void dtpInitRingBuffer(DtpRingBuffer32 *ring_buffer, void* data, int capacity){
-    ring_buffer->data = (int*)data;
-    ring_buffer->capacity = capacity;
-    ring_buffer->read_semaphore = 0;
-    ring_buffer->write_semaphore = capacity;
-    ring_buffer->head = 0;
-    ring_buffer->tail = 0;        
+DtpRingBuffer32 *dtpRingBufferCreate(void *data, int capacity){
+    DtpRingBuffer32 *rb = (DtpRingBuffer32 *)malloc(sizeof(DtpRingBuffer32));
+    rb->data = (int*)data;
+    rb->capacity = capacity;
+    rb->read_semaphore = 0;
+    rb->write_semaphore = capacity;
+    rb->head = 0;
+    rb->tail = 0;
+    return rb;
 }
 
 int dtpRingBufferGetTail(DtpRingBuffer32 *ring_buffer){

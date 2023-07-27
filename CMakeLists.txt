@@ -23,22 +23,33 @@ set(public_headers
 set(sources
 	${public_headers}
 	src/dtp.cpp
-	src/ringbuffer.c
 	src/file.cpp
 	src/nm6407/link.c
 	src/link-core.h
+	src/buffer.c
 	)
 
 if(NM)
-list(APPEND sources
-	src/nm6407/dtpLinkInit.S
-	src/nm6407/dtpLinkStart.S
+	list(APPEND sources
+		src/nm6407/dtpLinkInit.S
+		src/nm6407/dtpLinkStart.S
+		src/nm6407/usb.cpp
+		src/nm6407/ringbuffer.c
 	)
 	set_source_files_properties(
 		src/nm6407/dtpLinkInit.S
 		src/nm6407/dtpLinkStart.S
 		PROPERTIES
 		COMPILE_FLAGS "-mgas")
+else()
+	list(APPEND sources
+		src/x64/usb.cpp
+		src/x64/ringbuffer.c
+	)
+	target_include_directories(dtp 
+		PRIVATE
+		$ENV{HAL}/include
+	)
 endif()
 
 

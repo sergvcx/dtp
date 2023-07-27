@@ -47,21 +47,26 @@ extern "C" {
     }
 #ifndef __NM__
     int dtpOpenFileDesc(int fd, const char *mode){
+        DtpFileData *data = new DtpFileData();
+        //         if(data == 0){
+        //             return -1;
+        //         }
+        //         data->file = fdopen(fd, mode);
         // for(int i = 0; i < MAX_SIZE; i++){
-        //     if(objects[i].is_enabled == 0){
-        //         objects[i].fd = i + 1;
+        //     if(dtp_objects[i].is_enabled == 0){
+        //         dtp_objects[i].fd = i + 1;
         //         DtpFileData *data = new DtpFileData();
         //         if(data == 0){
         //             return -1;
         //         }
         //         data->file = fdopen(fd, mode);                
-        //         objects[i].user_data = data;
-        //         objects[i].implementaion.recv = fileRead;
-        //         objects[i].implementaion.send = fileWrite;
-        //         objects[i].implementaion.flush = fileFlush;
-        //         objects[i].implementaion.destroy = fileClose;
-        //         objects[i].is_enabled = 1;
-        //         return objects[i].fd;
+        //         dtp_objects[i].user_data = data;
+        //         dtp_objects[i].implementaion.recv = fileRead;
+        //         dtp_objects[i].implementaion.send = fileWrite;
+        //         dtp_objects[i].implementaion.flush = fileFlush;
+        //         dtp_objects[i].implementaion.destroy = fileClose;
+        //         dtp_objects[i].is_enabled = 1;
+        //         return dtp_objects[i].fd;
         //     }
         // }
         return -1;

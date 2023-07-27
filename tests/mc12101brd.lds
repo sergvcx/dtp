@@ -10,7 +10,7 @@ SECTIONS
 	.text : ALIGN(0x8)
 	{
 		*(.text);
-	} > Cx_IMU
+	} > EMI
 
 	.init : ALIGN(0x8)
 	{
@@ -36,4 +36,10 @@ SECTIONS
 	{
 		*(.stack);
 	} > Cx_IMU
+
+	.heap : ALIGN(0x8){
+		*(.heap)
+		. = ORIGIN(EMI) + LENGTH(EMI);
+    	__HEAP_0_END = .;
+	} > EMI
 }
