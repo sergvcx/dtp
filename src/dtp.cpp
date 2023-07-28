@@ -21,7 +21,7 @@ extern "C"{
         return dtp_objects[i].user_data;
     }
 
-    int dtpOpen(void *user_data, DtpImplemention *implementation){
+    int dtpOpen(void *user_data, DtpImplementation *implementation){
         for(int i = 0; i < MAX_SIZE; i++){
             if(dtp_objects[i].is_enabled == 0){
                 dtp_objects[i].fd = i + 1;

@@ -13,7 +13,7 @@ typedef struct{
     int is_enabled;
     void *user_data;
     int type;
-    DtpImplemention implementaion;
+    DtpImplementation implementaion;
 }  DtpObject;
 
 #ifdef __cplusplus 

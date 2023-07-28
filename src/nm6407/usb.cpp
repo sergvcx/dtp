@@ -55,7 +55,7 @@ int dtpOpenPload(HalAccess *access, uintptr_t buffer_addr){
     data->buffer_desc_in = dtpOpenBuffer(data->rb_in);
     data->buffer_desc_out = dtpOpenBuffer(data->rb_out);
 
-    DtpImplemention impl;
+    DtpImplementation impl;
     impl.recv = usbRecv;
     impl.send = usbSend;
     impl.flush = 0;

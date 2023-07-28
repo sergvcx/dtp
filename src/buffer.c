@@ -42,7 +42,7 @@ int dtpOpenBuffer(DtpRingBuffer32 *ringbuffer){
         return -1;
     }
     shmemData->ringbuffer = ringbuffer;
-    DtpImplemention impl;
+    DtpImplementation impl;
     impl.send = shmemWrite;
     impl.recv = shmemRead;
     impl.destroy = shmemClose;

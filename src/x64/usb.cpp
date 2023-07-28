@@ -60,7 +60,7 @@ extern "C"{
         data->desc_in = dtpOpenBuffer(data->rb_in);
         data->desc_out = dtpOpenBuffer(data->rb_out);    
 
-        DtpImplemention impl;
+        DtpImplementation impl;
         impl.send = usbSend;
         impl.recv = usbRecv;
         impl.flush = 0;

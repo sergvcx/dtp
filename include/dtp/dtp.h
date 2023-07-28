@@ -26,7 +26,7 @@ typedef struct {
     int (*wait_send)(void *user_data);
     int (*flush)(void *user_data);
     int (*destroy)(void *user_data);
-} DtpImplemention;
+} DtpImplementation;
 
 enum DtpSignal{
     DTP_SIG_NONE,
@@ -77,7 +77,7 @@ extern "C" {
     int dtpOpenDesc(int desc);
     int dtpOpenFileDesc(int fd, const char *mode);
 
-    int dtpOpen(void *user_data, DtpImplemention *implementation);
+    int dtpOpen(void *user_data, DtpImplementation *implementation);
 
     size_t dtpSend(int desc, const void *data, size_t size);
     size_t dtpRecv(int desc, void *data, size_t size);

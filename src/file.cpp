@@ -37,7 +37,7 @@ extern "C" {
         }
         strcpy(data->filename, filename);
 
-        DtpImplemention impl;
+        DtpImplementation impl;
         data->file = fopen(filename, mode);
         impl.recv = fileRead;
         impl.send = fileWrite;

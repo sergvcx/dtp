@@ -33,7 +33,7 @@ int dtpOpenLink(int port){
 
     data->port = port;
     //dtpLinkInit();
-    DtpImplemention impl;
+    DtpImplementation impl;
     impl.recv = linkRead;
     impl.send = linkWrite;
     impl.flush = linkFlush;
