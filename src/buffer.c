@@ -47,6 +47,7 @@ int dtpOpenBuffer(DtpRingBuffer32 *ringbuffer){
     impl.recv = shmemRead;
     impl.destroy = shmemClose;
     impl.flush = 0;
-    int fd = dtpOpen(shmemData, &impl);
+    impl.user_data = shmemData;
+    int fd = dtpOpen(&impl);
     return fd;
 }

@@ -18,6 +18,7 @@ typedef void (*DtpNotifyFunctionT)(void *data);
 //typedef void (*DtpReadFunctionT)(void *user_data, const void *buf, size_t size);
 
 typedef struct {
+    void *user_data;
     size_t (*send)(void *user_data, const void *buf, size_t size);
     size_t (*recv)(void *user_data, void *buf, size_t size);
     size_t (*send_matrix)(void *user_data, const void *buf, size_t size, int width, int stride);
@@ -48,8 +49,7 @@ typedef struct {
 
     DtpAsyncType type;
     void *event_data;
-    void *user_data;
-    DtpNotifyFunctionT sigevent;
+    DtpNotifyFunctionT callback;
 } DtpASync;
 
 typedef enum{
@@ -77,7 +77,8 @@ extern "C" {
     int dtpOpenDesc(int desc);
     int dtpOpenFileDesc(int fd, const char *mode);
 
-    int dtpOpen(void *user_data, DtpImplementation *implementation);
+    int dtpOpen(DtpImplementation *implementation);
+
 
     size_t dtpSend(int desc, const void *data, size_t size);
     size_t dtpRecv(int desc, void *data, size_t size);
@@ -85,6 +86,8 @@ extern "C" {
     size_t dtpRecvM(int desc, void *data, size_t size, int width, int stride);
 
     void *dtpGetUserData(int desc);
+
+    int dtpGetProp(int desc, int cmd);
 
     size_t dtpAsyncRecv(DtpASync *task);
     size_t dtpAsyncSend(DtpASync *task);

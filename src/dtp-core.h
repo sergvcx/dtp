@@ -10,8 +10,7 @@ typedef struct{
 
 typedef struct{
     int fd;
-    int is_enabled;
-    void *user_data;
+    int is_used;
     int type;
     DtpImplementation implementaion;
 }  DtpObject;

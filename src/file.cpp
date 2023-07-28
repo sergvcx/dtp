@@ -43,7 +43,8 @@ extern "C" {
         impl.send = fileWrite;
         impl.flush = fileFlush;
         impl.destroy = fileClose;
-        return dtpOpen(data, &impl);
+        impl.user_data = data;
+        return dtpOpen(&impl);
     }
 #ifndef __NM__
     int dtpOpenFileDesc(int fd, const char *mode){
@@ -53,7 +54,7 @@ extern "C" {
         //         }
         //         data->file = fdopen(fd, mode);
         // for(int i = 0; i < MAX_SIZE; i++){
-        //     if(dtp_objects[i].is_enabled == 0){
+        //     if(dtp_objects[i].is_used == 0){
         //         dtp_objects[i].fd = i + 1;
         //         DtpFileData *data = new DtpFileData();
         //         if(data == 0){
@@ -65,7 +66,7 @@ extern "C" {
         //         dtp_objects[i].implementaion.send = fileWrite;
         //         dtp_objects[i].implementaion.flush = fileFlush;
         //         dtp_objects[i].implementaion.destroy = fileClose;
-        //         dtp_objects[i].is_enabled = 1;
+        //         dtp_objects[i].is_used = 1;
         //         return dtp_objects[i].fd;
         //     }
         // }

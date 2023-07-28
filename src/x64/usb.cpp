@@ -19,7 +19,7 @@ extern "C"{
 
         halReadMemBlock(data->access, buf, message[0], message[1]);
 
-        return size;
+        return message[1] * 4;
     }
 
     size_t usbSend(void *user_data, const void *buf, size_t size){
@@ -61,11 +61,12 @@ extern "C"{
         data->desc_out = dtpOpenBuffer(data->rb_out);    
 
         DtpImplementation impl;
+        impl.user_data = data;
         impl.send = usbSend;
         impl.recv = usbRecv;
         impl.flush = 0;
         impl.destroy = usbDestroy;
-        return dtpOpen(data, &impl);
+        return dtpOpen(&impl);
     }
 
 }

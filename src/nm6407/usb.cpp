@@ -60,6 +60,7 @@ int dtpOpenPload(HalAccess *access, uintptr_t buffer_addr){
     impl.send = usbSend;
     impl.flush = 0;
     impl.destroy = usbDestroy;
-    return dtpOpen(data, &impl);
+    impl.user_data = data;
+    return dtpOpen(&impl);
 }
 
