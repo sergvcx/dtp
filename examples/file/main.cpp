@@ -1,4 +1,5 @@
 #include "dtp/dtp.h"
+#include "dtp/nm6407.h"
 #include "string.h"
 
 int main(){

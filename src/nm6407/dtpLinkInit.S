@@ -37,7 +37,7 @@
 .global _dtpLinkInit
 
 .section .text,"ax",@progbits
-//void dtpLinkSetCallback(LinkCallback callback, int port, int direction);
+//void dtpLinkSetCallback(LinkCallback callback, void* user_data);
 
 _dtpLinkSetCallback:
 	ar5 = ar7 - 2;

@@ -5,15 +5,7 @@
 #include "stdio.h"
 #include "dtp-core.h"
 
-typedef struct DtpRingBuffer32{
-    int *data;
-    volatile size_t capacity;
-
-    volatile size_t read_semaphore;
-    volatile size_t write_semaphore;
-    volatile size_t head;
-    volatile size_t tail;
-} DtpRingBuffer32;
+#include "dtp-nm6407-core.h"
 
 
 
@@ -36,6 +28,7 @@ DtpRingBuffer32 *dtpRingBufferCreate(void *data, int capacity){
     rb->write_semaphore = capacity;
     rb->head = 0;
     rb->tail = 0;
+    rb->is_inited = 1;
     return rb;
 }
 

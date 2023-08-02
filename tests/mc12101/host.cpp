@@ -40,31 +40,6 @@ void test_singleBuffer_shouldDoneCorrect(){
 
 }
 
-void test_openUsb_shouldDoneCorrect(){
-    HalAccess *access = getTestAccess();
-    int value = halSync(access, 0, NULL);
-
-    int desc = dtpOpenPload(access, (uintptr_t)value);
-
-    int buf[2];
-    buf[0] = 0xCDCDCDCD;
-    buf[1] = 0xCDCDCDCD;
-    int size = dtpRecv(desc, buf, 2 * 4);
-    printf("buf: %d, %d\n", buf[0], buf[1]);
-    assert(buf[0] == 1);
-    assert(buf[1] == 2);   
-
-    buf[0]++;
-    buf[1]++;
-
-    dtpSend(desc, buf, 2 * 4);
-
-    int sync = halSync(access, 0, NULL);
-    assert(sync == 0x33);
-
-    dtpClose(desc);
-
-}
 
 int main(){
     //halBoard *
@@ -83,8 +58,7 @@ int main(){
     global_access = halGetAccess(board, &core, &error);
 
     test_singleBuffer_shouldDoneCorrect();
-    test_openUsb_shouldDoneCorrect();
-
+    
     halAccessClose(global_access);
     halBoardClose(board);
     halFreeBoard(board);

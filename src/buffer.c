@@ -1,6 +1,7 @@
 #include "dtp/ringbuffer.h"
 #include "dtp-core.h"
 
+
 size_t shmemRead(void *user_data, void *buf, size_t size){
     DtpShmemData *data = (DtpShmemData *)user_data;
 
@@ -48,6 +49,6 @@ int dtpOpenBuffer(DtpRingBuffer32 *ringbuffer){
     impl.destroy = shmemClose;
     impl.flush = 0;
     impl.user_data = shmemData;
-    int fd = dtpOpen(&impl);
+    int fd = dtpOpenCustom(&impl);
     return fd;
 }

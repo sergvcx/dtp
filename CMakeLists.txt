@@ -19,12 +19,14 @@ add_library(dtp::dtp ALIAS dtp)
 set(public_headers
 	include/dtp/dtp.h
 	include/dtp/ringbuffer.h
+	include/dtp/nm6407.h
 	)
 set(sources
 	${public_headers}
 	src/dtp.cpp
 	src/file.cpp
 	src/nm6407/link.c
+	src/nm6407/default-buffer.c
 	src/link-core.h
 	src/buffer.c
 	)
@@ -33,7 +35,6 @@ if(NM)
 	list(APPEND sources
 		src/nm6407/dtpLinkInit.S
 		src/nm6407/dtpLinkStart.S
-		src/nm6407/usb.cpp
 		src/nm6407/ringbuffer.c
 	)
 	set_source_files_properties(
@@ -41,15 +42,16 @@ if(NM)
 		src/nm6407/dtpLinkStart.S
 		PROPERTIES
 		COMPILE_FLAGS "-mgas")
+	target_include_directories(dtp PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src/nm6407)
 else()
 	list(APPEND sources
-		src/x64/usb.cpp
 		src/x64/ringbuffer.c
 	)
 	target_include_directories(dtp 
 		PRIVATE
 		$ENV{HAL}/include
 	)
+	add_subdirectory(tests)
 endif()
 
 
@@ -72,5 +74,4 @@ set_target_properties(dtp PROPERTIES
 	)
 
 add_subdirectory(examples)
-add_subdirectory(tests)
 

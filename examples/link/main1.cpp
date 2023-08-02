@@ -1,4 +1,5 @@
 #include "dtp/dtp.h"
+#include "dtp/nm6407.h"
 #include "stdio.h"
 
 #define SIZE 8

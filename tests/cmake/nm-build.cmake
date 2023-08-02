@@ -1,0 +1,30 @@
+
+macro(mc12101_executable target)
+    set(options DEBUG_STUB)
+    set(oneValueArgs ARCH LINKER_SCRIPT)
+    set(multiValueArgs FILES LIBS LIBDIRS INCLUDE_DIRS)
+    cmake_parse_arguments(MC12101 "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+    set(files ${MC12101_UNPARSED_ARGUMENTS})
+    #message(STATUS ${MC12101_LINKER_SCRIPT})
+    #list(APPEND MC12101_LIBS)
+    list(APPEND MC12101_LIBDIRS -L$ENV{MC12101}/lib -L${CMAKE_CURRENT_LIST_DIR})
+    list(APPEND MC12101_INCLUDE_DIRS -I$ENV{MC12101}/include)
+    set(libs ${MC12101_LIBS})
+    set(libdirs ${MC12101_LIBDIRS})
+    set(incdirs ${MC12101_INCLUDE_DIRS})
+    set(whole_archives -lmc12101load_nm -lnm6407_io_nmc)
+    message(STATUS "libs: ${libs}")
+    message(STATUS "libdirs: ${libdirs}")
+    message(STATUS "incdirs: ${incdirs}")
+    set(ld_flags -Wl,-T${MC12101_LINKER_SCRIPT} -Wl,--whole-archive ${whole_archives} -Wl,--no-whole-archive)
+    #set(ld_flags -Wl,-Tmc12101brd1.lds -Wl,-Tmc12101brd0.lds  -Wl,--whole-archive ${whole_archives} -Wl,--no-whole-archive)
+
+    unset(file_full_path)
+    foreach(f ${files})
+        list(APPEND file_full_path ${CMAKE_CURRENT_LIST_DIR}/${f})
+    endforeach()
+
+    add_custom_target(${target} ALL 
+        COMMAND nmc-g++ -o${target}.abs ${file_full_path} ${libs} ${ld_flags} ${incdirs} ${libdirs}
+        DEPENDS ${file_full_path})
+endmacro()

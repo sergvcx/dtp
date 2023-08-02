@@ -1,8 +1,6 @@
 #include "dtp/dtp.h"
 #include "dtp-core.h"
 
-#define DTP_OPEN_MAX 16
-
 static DtpObject dtp_objects[DTP_OPEN_MAX];
 
 static int dtpIsInited = 0;
@@ -29,7 +27,7 @@ extern "C"{
         return dtp_objects[i].implementaion.user_data;
     }
 
-    int dtpOpen(DtpImplementation *implementation){
+    int dtpOpenCustom(DtpImplementation *implementation){
         if(dtpIsInited == 0){
             dtpInit();
             dtpIsInited = 1;
@@ -53,24 +51,8 @@ extern "C"{
 
     int dtpOpenDesc(int desc){
         int no = desc - 1;
-        return dtpOpen(&dtp_objects[no].implementaion);
+        return dtpOpenCustom(&dtp_objects[no].implementaion);
     }
-
-    size_t dtpWrite(int desc, const void *data, size_t size){
-        return dtpSend(desc, data, size);
-    }
-
-    size_t dtpRead(int desc, void *data, size_t size){
-        return dtpRecv(desc, data, size);
-    }
-
-	size_t dtpWriteM(int desc, const void *data, size_t size, int width, int stride){
-        return dtpSendM(desc, data, size, width, stride);
-	}
-
-    size_t dtpReadM(int desc, void *data, size_t size, int width, int stride){
-        return dtpRecvM(desc, data, size, width, stride);
-	}
 
     size_t dtpSend(int desc, const void *data, size_t size){
         int no = desc - 1;
@@ -84,7 +66,7 @@ extern "C"{
     size_t dtpRecv(int desc, void *data, size_t size){
         int no = desc - 1;
         if(dtp_objects[no].implementaion.recv){
-            return dtp_objects[no].implementaion.recv(dtp_objects[no].implementaion.user_data, data, size);
+            int result = dtp_objects[no].implementaion.recv(dtp_objects[no].implementaion.user_data, data, size);
         } else {
             return 0;
         }
@@ -128,10 +110,7 @@ extern "C"{
     }
 
     //void dtpSetCallback(int desc, DtpNotifyFunctionT notifyFunc, DtpSignalData *signal);
-    size_t dtpAsyncRecv(DtpASync *task){
-        
-        //dtpSetCallback(task->desc, task->sigevent, task->sigval);
-        //return dtp_objects[no].implementaion.read(dtp_objects[no].user_data, data, size);
+    size_t dtpAsyncRecv(DtpASync *task){        
         return 0;
     }
 
@@ -139,5 +118,21 @@ extern "C"{
         return 0;
     }
 
+
+    size_t dtpWrite(int desc, const void *data, size_t size){
+        return dtpSend(desc, data, size);
+    }
+
+    size_t dtpRead(int desc, void *data, size_t size){
+        return dtpRecv(desc, data, size);
+    }
+
+	size_t dtpWriteM(int desc, const void *data, size_t size, int width, int stride){
+        return dtpSendM(desc, data, size, width, stride);
+	}
+
+    size_t dtpReadM(int desc, void *data, size_t size, int width, int stride){
+        return dtpRecvM(desc, data, size, width, stride);
+	}
 
 }

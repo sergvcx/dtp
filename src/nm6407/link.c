@@ -39,5 +39,5 @@ int dtpOpenLink(int port){
     impl.flush = linkFlush;
     impl.user_data = data;
 
-    return dtpOpen(&impl);
+    return dtpOpenCustom(&impl);
 }

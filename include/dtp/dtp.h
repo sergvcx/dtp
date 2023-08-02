@@ -14,6 +14,8 @@ typedef union {
 
 typedef void (*DtpNotifyFunctionT)(void *data);
 
+#define DTP_OPEN_MAX 16
+
 //typedef void (*DtpWriteFunctionT)(void *user_data, const void *buf, size_t size);
 //typedef void (*DtpReadFunctionT)(void *user_data, const void *buf, size_t size);
 
@@ -52,17 +54,6 @@ typedef struct {
     DtpNotifyFunctionT callback;
 } DtpASync;
 
-typedef enum{
-    DTP_TYPE,
-    DTP_RING_BUFFER_ADDR,
-    DTP_RING_BUFFER_ADDR_HI,
-} DtpProperty;
-
-typedef enum{
-    DTP_NONE,
-    DTP_BUFFER
-} DtpType;
-
 //all sizes, widths, strides and offsets in bytes
 
 #ifdef __cplusplus
@@ -72,12 +63,8 @@ extern "C" {
     //int dtpOpenBuffer(void *buffer, size_t size);
 
     int dtpOpenBuffer(DtpRingBuffer32 *ringbuffer);
-    int dtpOpenFile(const char *filename, const char *mode);
-    int dtpOpenLink(int port);
-    int dtpOpenDesc(int desc);
-    int dtpOpenFileDesc(int fd, const char *mode);
 
-    int dtpOpen(DtpImplementation *implementation);
+    int dtpOpenCustom(DtpImplementation *implementation);
 
 
     size_t dtpSend(int desc, const void *data, size_t size);
@@ -94,6 +81,8 @@ extern "C" {
     int dtpWaitSend(int desc);
     int dtpWaitRecv(int desc);
     int dtpClose(int desc);
+
+
 
     // deprecated
     size_t dtpWrite(int desc, const void *data, size_t size);

@@ -1,3 +1,6 @@
 [submodule "cmake-nmc-gcc-toolchain"]
 	path = cmake-nmc-gcc-toolchain
 	url = git@git.module.ru:nmc/cmake-nmc-gcc-toolchain.git
+[submodule "nmassert"]
+	path = nmassert
+	url = git@git.module.ru:nmc/nmassert.git

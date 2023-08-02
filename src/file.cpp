@@ -44,7 +44,7 @@ extern "C" {
         impl.flush = fileFlush;
         impl.destroy = fileClose;
         impl.user_data = data;
-        return dtpOpen(&impl);
+        return dtpOpenCustom(&impl);
     }
 #ifndef __NM__
     int dtpOpenFileDesc(int fd, const char *mode){
