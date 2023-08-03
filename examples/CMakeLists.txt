@@ -4,5 +4,5 @@ project(dtp-examples)
 
 add_subdirectory(file)
 if(NM)
-add_subdirectory(link)
+#add_subdirectory(link)
 endif()

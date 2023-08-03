@@ -1,12 +1,43 @@
 #include "dtp/dtp.h"
-#include "dtp/nm6407.h"
+#include "stdio.h"
 #include "string.h"
 
+
+
+int fileRecv(void *com_spec, DtpAsync *aio){
+    FILE *file = (FILE*)com_spec;
+    size_t rsize = fread((void*)aio->buf, sizeof(int), aio->nwords, file);
+    return 0;
+}
+
+int fileSend(void *com_spec, DtpAsync *aio){
+    FILE *file = (FILE*)com_spec;
+    size_t wsize = fwrite((void*)aio->buf, sizeof(int), aio->nwords, file);
+    fflush(file);
+    return 0;
+}
+
+int fileDestroy(void *com_spec){
+    FILE *file = (FILE*)com_spec;
+    return fclose(file);
+}
+
+int fileStatus(void *com_spec, DtpAsync *aio){
+    return 1;
+}
+
 int main(){
-    int desc = dtpOpenFile("simple.txt", "w+");
+    FILE *file = fopen("simple.txt", "w+");
+    
+    DtpImplementation impl;
+    impl.com_spec = file;
+    impl.recv_func = fileRecv;
+    impl.send_func = fileSend;
+    impl.destroy_func = fileDestroy;    
+    int desc = dtpOpenCustom(&impl);
+
     const char *str = "This is text\n";
-    dtpWrite(desc, str, strlen(str) * 4);
-    dtpFlush(desc);
+    dtpSend(desc, str, strlen(str));
     dtpClose(desc);
     return 0;
 }
