@@ -10,7 +10,8 @@ typedef void (*DtpNotifyFunctionT)(void *event_data);
 
 typedef enum{
     DTP_OK,
-    DTP_ERROR
+    DTP_ERROR,
+    DTP_AGAIN
 } DtpError;
 
 typedef enum {
@@ -38,7 +39,7 @@ typedef struct {
 } DtpAsync;
 
 typedef enum {
-    DTP_ST_WORK,
+    DTP_ST_IN_PROCESS,
     DTP_ST_DONE,
     DTP_ST_ERROR
 } DtpAsyncStatus;
@@ -49,7 +50,7 @@ typedef struct {
     int (*recv_func)(void *com_spec, DtpAsync *task);
     //int (*listen)(void *com_spec);
     //int (*connect)(void *com_spec);
-    int (*status_func)(void *com_spec, DtpAsync *task);
+    int (*status_func)(void *com_spec, DtpAsync *task);    
     int (*destroy_func)(void *com_spec);
 } DtpImplementation;
 

@@ -133,7 +133,7 @@ extern "C"{
         int error = 0;
         while(1){
             error = impl->status_func(com_spec, task);
-            if(error != DTP_ST_WORK) break;
+            if(error != DTP_ST_IN_PROCESS) break;
         };
         return error;
     }
