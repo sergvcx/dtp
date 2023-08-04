@@ -37,6 +37,12 @@ typedef struct {
     DtpNotifyFunctionT callback;
 } DtpAsync;
 
+typedef enum {
+    DTP_ST_WORK,
+    DTP_ST_DONE,
+    DTP_ST_ERROR
+} DtpAsyncStatus;
+
 
 typedef struct {
     void *com_spec;

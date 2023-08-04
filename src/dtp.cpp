@@ -116,8 +116,12 @@ extern "C"{
     int dtpAsyncWait(int desc, DtpAsync *task){
         int no = getIndexFromDesc(desc);    
         DtpImplementation *impl = &dtp_objects[no].implementaion;
-        while(impl->status_func(impl->com_spec, task) == 0);
-        return 0;
+        int error = 0;
+        while(1){
+            error = impl->status_func(impl->com_spec, task);
+            if(error != DTP_ST_WORK) break;
+        };
+        return error;
     }
 
 

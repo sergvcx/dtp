@@ -23,7 +23,7 @@ int fileDestroy(void *com_spec){
 }
 
 int fileStatus(void *com_spec, DtpAsync *aio){
-    return 1;
+    return DTP_ST_DONE;
 }
 
 int main(){
