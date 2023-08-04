@@ -45,9 +45,10 @@ typedef enum {
 
 
 typedef struct {
-    void *com_spec;
     int (*send_func)(void *com_spec, DtpAsync *task);
     int (*recv_func)(void *com_spec, DtpAsync *task);
+    //int (*listen)(void *com_spec);
+    //int (*connect)(void *com_spec);
     int (*status_func)(void *com_spec, DtpAsync *task);
     int (*destroy_func)(void *com_spec);
 } DtpImplementation;
@@ -61,7 +62,7 @@ typedef struct {
 extern "C" {
 #endif
 
-    int dtpOpenCustom(DtpImplementation *implementation);
+    int dtpOpenCustom(void* com_spec, DtpImplementation *implementation);
     int dtpClose(int desc);
 
     int dtpConnect(int desc);

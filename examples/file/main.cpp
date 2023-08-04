@@ -29,12 +29,11 @@ int fileStatus(void *com_spec, DtpAsync *aio){
 int main(){
     FILE *file = fopen("simple.txt", "w+");
     
-    DtpImplementation impl;
-    impl.com_spec = file;
+    DtpImplementation impl;    
     impl.recv_func = fileRecv;
     impl.send_func = fileSend;
     impl.destroy_func = fileDestroy;    
-    int desc = dtpOpenCustom(&impl);
+    int desc = dtpOpenCustom(file, &impl);
 
     const char *str = "This is text\n";
     dtpSend(desc, str, strlen(str));
