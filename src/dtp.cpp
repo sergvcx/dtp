@@ -31,7 +31,7 @@ extern "C"{
                 dtp_objects[i].com_spec = com_spec;
                 dtp_objects[i].implementaion.recv_func  = implementation->recv_func;
                 dtp_objects[i].implementaion.send_func = implementation->send_func;
-                dtp_objects[i].implementaion.status_func = implementation->status_func;                
+                dtp_objects[i].implementaion.get_status_func = implementation->get_status_func;                
                 dtp_objects[i].implementaion.destroy_func = implementation->destroy_func;
                 dtp_objects[i].is_used = 1;
                 return dtp_objects[i].fd;
@@ -63,7 +63,6 @@ extern "C"{
         int error = dtpAsyncRecv(desc, &task);
         if(error) return error;
         return dtpAsyncWait(desc, &task);   
-        
     }
 
 	int dtpSendM(int desc, const void *data, size_t size, int width, int stride){
@@ -127,19 +126,16 @@ extern "C"{
         int no = getIndexFromDesc(desc);    
         DtpImplementation *impl = &dtp_objects[no].implementaion;
         void* com_spec = dtp_objects[no].com_spec;
-        return impl->status_func(com_spec, task);
+        return impl->get_status_func(com_spec, task);
     }
 
-    int dtpAsyncWait(int desc, DtpAsync *task){
-        int no = getIndexFromDesc(desc);    
-        DtpImplementation *impl = &dtp_objects[no].implementaion;
-        void* com_spec = dtp_objects[no].com_spec;
+    int dtpAsyncWait(int desc, DtpAsync *task){        
         int error = 0;
         while(1){
-            error = impl->status_func(com_spec, task);
-            if(error != DTP_ST_IN_PROCESS) break;
+            error = dtpAsyncStatus(desc, task);
+            if(error == DTP_ST_ERROR) return DTP_ST_ERROR;
+            if(error == DTP_ST_DONE) return 0;
         };
-        return error;
     }
 
 
