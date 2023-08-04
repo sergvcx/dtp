@@ -50,8 +50,9 @@ extern "C"{
         task.buf = (volatile void*)data;
         task.nwords = size;
         task.sigevent = DTP_EVENT_NONE;
-        dtpAsyncSend(desc, &task);        
-        return 0;
+        int error = dtpAsyncSend(desc, &task);
+        if(error) return error;
+        return dtpAsyncWait(desc, &task);
     }
 
     int dtpRecv(int desc, void *data, size_t size){        
@@ -59,8 +60,9 @@ extern "C"{
         task.buf = (volatile void*)data;
         task.nwords = size;
         task.sigevent = DTP_EVENT_NONE;
-        dtpAsyncRecv(desc, &task);        
-        return 0;
+        int error = dtpAsyncRecv(desc, &task);
+        if(error) return error;
+        return dtpAsyncWait(desc, &task);   
         
     }
 
@@ -70,8 +72,9 @@ extern "C"{
         task.nwords = size;
         task.sigevent = DTP_EVENT_NONE;
         task.stride = stride;
-        task.width = width;        
-        dtpAsyncSend(desc, &task);
+        task.width = width;
+        int error = dtpAsyncSend(desc, &task);
+        if(error) return error;
         return dtpAsyncWait(desc, &task);
     }
 
@@ -82,16 +85,17 @@ extern "C"{
         task.nwords = size;
         task.stride = stride;
         task.width = width;
-        dtpAsyncRecv(desc, &task);
+        int error = dtpAsyncRecv(desc, &task);
+        if(error) return error;
         return dtpAsyncWait(desc, &task);
     }
 
     int dtpConnect(int desc){
-
+        return DTP_ERROR;
     }
 
     int dtpListen(int desc){
-
+        return DTP_ERROR;
     }
 
 
@@ -99,9 +103,9 @@ extern "C"{
         int no = getIndexFromDesc(desc);    
         DtpImplementation *impl = &dtp_objects[no].implementaion;
         void* com_spec = dtp_objects[no].com_spec;
-        impl->destroy_func(com_spec);
+        int error = impl->destroy_func(com_spec);
         dtp_objects[no].is_used = 0;
-        return 0;
+        return error;
     }
 
     //void dtpSetCallback(int desc, DtpNotifyFunctionT notifyFunc, DtpSignalData *signal);
