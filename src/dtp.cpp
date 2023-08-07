@@ -72,6 +72,7 @@ extern "C"{
         task.sigevent = DTP_EVENT_NONE;
         task.stride = stride;
         task.width = width;
+        task.callback = 0;
         int error = dtpAsyncSend(desc, &task);
         if(error) return error;
         return dtpAsyncWait(desc, &task);
@@ -84,6 +85,7 @@ extern "C"{
         task.nwords = size;
         task.stride = stride;
         task.width = width;
+        task.callback = 0;
         int error = dtpAsyncRecv(desc, &task);
         if(error) return error;
         return dtpAsyncWait(desc, &task);
