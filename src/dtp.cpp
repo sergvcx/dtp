@@ -50,6 +50,8 @@ extern "C"{
         task.buf = (volatile void*)data;
         task.nwords = size;
         task.sigevent = DTP_EVENT_NONE;
+        task.callback = 0;
+        task.type = DTP_TASK_1D;
         int error = dtpAsyncSend(desc, &task);
         if(error) return error;
         return dtpAsyncWait(desc, &task);
@@ -60,6 +62,8 @@ extern "C"{
         task.buf = (volatile void*)data;
         task.nwords = size;
         task.sigevent = DTP_EVENT_NONE;
+        task.callback = 0;
+        task.type = DTP_TASK_1D;
         int error = dtpAsyncRecv(desc, &task);
         if(error) return error;
         return dtpAsyncWait(desc, &task);   
@@ -73,6 +77,7 @@ extern "C"{
         task.stride = stride;
         task.width = width;
         task.callback = 0;
+        task.type = DTP_TASK_2D;
         int error = dtpAsyncSend(desc, &task);
         if(error) return error;
         return dtpAsyncWait(desc, &task);
@@ -86,6 +91,7 @@ extern "C"{
         task.stride = stride;
         task.width = width;
         task.callback = 0;
+        task.type = DTP_TASK_2D;
         int error = dtpAsyncRecv(desc, &task);
         if(error) return error;
         return dtpAsyncWait(desc, &task);
