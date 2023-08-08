@@ -19,9 +19,11 @@ add_library(dtp::dtp ALIAS dtp)
 set(public_headers
 	include/dtp/dtp.h
 	)
+
 set(sources
 	${public_headers}
 	src/dtp.cpp
+	src/file.cpp
 	)
 
 if(NM)

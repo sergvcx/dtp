@@ -2,8 +2,6 @@
 #include "stdio.h"
 #include "string.h"
 
-
-
 int fileRecv(void *com_spec, DtpAsync *aio){
     FILE *file = (FILE*)com_spec;
     size_t rsize = fread((void*)aio->buf, sizeof(int), aio->nwords, file);
