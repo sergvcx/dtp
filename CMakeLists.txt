@@ -23,7 +23,7 @@ set(public_headers
 set(sources
 	${public_headers}
 	src/dtp.cpp
-	src/file.cpp
+	src/file.c
 	)
 
 if(NM)
