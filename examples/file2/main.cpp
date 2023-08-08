@@ -4,10 +4,19 @@
 #include "string.h"
 
 int main(){
-    int desc = dtpOpenFile("simple.txt", "w+");
+    int dw = dtpOpenFile("simple.txt", "w");
+    int dr = dtpOpenFile("simple.txt", "r");
 
     const char *str = "This is text   \n";
-    dtpSend(desc, str, strlen(str) / sizeof(int));
-    dtpClose(desc);
+    char dst[20];
+    dtpSend(dw, str, strlen(str) / sizeof(int));
+
+    dtpRecv(dr, dst, strlen(str) / sizeof(int));
+
+    printf(dst);
+
+
+    dtpClose(dw);
+    dtpClose(dr);
     return 0;
 }
