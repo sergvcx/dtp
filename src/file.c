@@ -3,6 +3,16 @@
 
 static int fileRecv(void *com_spec, DtpAsync *aio){
     FILE *file = (FILE*)com_spec;
+	
+	size_t start = ftell(file);
+	size_t tell;
+	do {
+		fseek(file, 0, SEEK_END);
+		tell = ftell(file);
+	}
+    while (tell - start < aio->nwords*sizeof(int)); //???? fteel in bytes or words
+	fseek(file, start, SEEK_SET);
+
     size_t rsize = fread((void*)aio->buf, sizeof(int), aio->nwords, file);
     return 0;
 }
@@ -27,6 +37,15 @@ int dtpOpenFile(const char *filename, const char *mode){
     DtpImplementation impl;
 
     FILE *file = fopen(filename, mode);
+	if (file == 0) {
+		file = fopen(filename, "w");
+		if (file) {
+			fclose(file);
+			file = fopen(filename, mode);
+			if (file == 0) return DTP_ST_ERROR;
+		}
+		else return DTP_ST_ERROR;
+	}
 
     impl.recv_func = fileRecv;
     impl.send_func = fileSend;
