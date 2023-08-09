@@ -1,6 +1,7 @@
 #include "dtp/mc12101-host.h"
 #include "dtp/dtp.h"
 #include "stdio.h"
+#include "malloc.h"
 
 
 const int DTP_MC12101_HOST_MESSAGE_SIZE = 2;
@@ -53,22 +54,24 @@ static int mc12101Status(void *com_spec, DtpAsync *aio){
 }
 
 static int mc12101Destroy(void *com_spec){
-    Mc12101PloadFile *data = (Mc12101PloadFile *)com_spec;
-    FILE *file = (FILE *)data->file;
-    fclose(file);
-    delete data;
+    //Mc12101PloadFile *data = (Mc12101PloadFile *)com_spec;
+    //FILE *file = (FILE *)data->file;
+    //fclose(file);
+    //delete data;
     return 0;
 }
 
+static Mc12101PloadFile Com_spec;
 extern "C"{
 
     int dtpOpenPloadFile(const char *filename){
-        Mc12101PloadFile *com_spec = new Mc12101PloadFile();
+        //Mc12101PloadFile *com_spec = new Mc12101PloadFile();
+        Mc12101PloadFile *com_spec = &Com_spec;
         if(com_spec == 0) return -1;
 
-        com_spec->file = fopen(filename, "r");
+        com_spec->file = fopen(filename, "wb");
         if(com_spec->file == 0) {
-            delete com_spec;
+           // delete com_spec;
             return -1;
         }
 
@@ -79,7 +82,7 @@ extern "C"{
         impl.destroy_func = mc12101Destroy;
 
         
-        return dtpOpenCustom(com_spec->file, &impl);  
+        return dtpOpenCustom(com_spec, &impl);  
     }
 
 }

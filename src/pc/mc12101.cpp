@@ -69,7 +69,9 @@ extern "C"{
         Mc12101PloadFile *com_spec = new Mc12101PloadFile();
         if(com_spec == 0) return -1;
 
-        com_spec->message_file = fopen(filename, "r");
+        com_spec->message_file = fopen(filename, "wb+");
+        com_spec->access = access;
+
         if(com_spec->message_file == 0) return -1;
 
         DtpImplementation impl;

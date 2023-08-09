@@ -1,4 +1,5 @@
 #include "dtp/dtp.h"
+#include "dtp/mc12101-host.h"
 #include "stdio.h"
 #include "malloc.h"
 
@@ -11,15 +12,36 @@ static int fileRecv(void *com_spec, DtpAsync *aio){
     FILE *file = (FILE*)com_spec;
 	
 	size_t start = ftell(file);
-	size_t tell;
-	do {
-		fseek(file, 0, SEEK_END);
-		tell = ftell(file);
-	}
-    while (tell - start < aio->nwords * sizeof(int));  //fteel in bytes or words
-	fseek(file, start, SEEK_SET);
+	printf(" start=%d\n", start);
+	//size_t tell;
+	//do {
+	//	fseek(file, 0, SEEK_CUREND);
+	//	tell = ftell(file);
+	//	
+	//}
+    //while (tell - start < aio->nwords * sizeof(int));  //fteel in bytes or words
 
-    size_t rsize = fread((void*)aio->buf, sizeof(int), aio->nwords, file);
+	size_t leftToRead = aio->nwords * sizeof(int);
+	int* data = (int*)aio->buf;
+	while (leftToRead) {
+		size_t rsize;
+		if (leftToRead< 256)
+			rsize = fread(data, sizeof(int), leftToRead, file);
+		else 
+			rsize = fread(data, sizeof(int), 256, file);
+		leftToRead -= rsize;
+		data+= rsize;
+		int tell = ftell(file);
+		printf(" rsize=%d tell=%d\n", rsize, tell);
+	}
+	
+
+	//printf(" tell=%d\n", tell);
+
+	//fseek(file, start*4/sizeof(int), SEEK_SET);
+
+    //size_t rsize = fread((void*)aio->buf, sizeof(int), aio->nwords, file);
+	
     return 0;
 }
 
