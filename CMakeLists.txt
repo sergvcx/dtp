@@ -18,6 +18,8 @@ add_library(dtp::dtp ALIAS dtp)
 
 set(public_headers
 	include/dtp/dtp.h
+	include/dtp/mc12101-host.h
+	include/dtp/file.h
 	)
 
 set(sources
@@ -28,8 +30,13 @@ set(sources
 
 if(NM)
 set(SUFFIX -nm)
+list(APPEND sources 
+	src/nm/mc12101.cpp)
 else()
 set(SUFFIX -x64)
+list(APPEND sources 
+	src/pc/mc12101.cpp)
+target_include_directories(dtp PRIVATE $ENV{MC12101}/include)
 endif()
 
 target_sources(dtp PRIVATE ${sources})

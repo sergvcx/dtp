@@ -2,7 +2,6 @@
 #define __DTP_H_INCLUDED__
 
 #include <stdlib.h>
-#include "stdint.h"
 
 typedef void (*DtpNotifyFunctionT)(void *event_data);
 
