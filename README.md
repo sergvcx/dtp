@@ -15,7 +15,8 @@ dtpRecv(buf, 20);       // read from "input" file
 ```
 
 ### Создание собственной реализации
-Дескриптор можно выделить используя собственные функции чтения-записи.
+Дескриптор можно выделить используя собственные функции записи-чтения.
+
 ```c++
 struct UserData{
     // ...
@@ -39,7 +40,7 @@ int user_recv(void *com_spec, DtpAsync *cmd){
 
 int user_get_status(void *com_spec, DtpAsync *cmd){
     UserData *data = (UserData *)com_spec;
-    // получение статус транзакции
+    // получение статуса транзакции
     return DTP_ST_IN_PROCESS; // транзакция в процессе
     return DTP_ST_DONE; // транзакция завершена
     return DTP_ST_ERROR; // при транзакции произошла ошибка
@@ -54,7 +55,12 @@ int user_destroy(void *com_spec, DtpAsync *cmd){
 
 int main(){
     DtpImplementation impl;
-    UserData com_spec;
+    impl.send_func = user_send;
+    impl.recv_func = user_recv;
+    impl.get_status_func = user_get_status;
+    impl.destroy_func = user_destroy;
+
+    UserData com_spec;    
     // инициализация данных
     int d = dtpOpenCustom(&com_spec, &impl)  // возвращает d > 0 при успехе и -1 при провале получения дескриптора
     // код программы
@@ -63,6 +69,7 @@ int main(){
 
 
 ## Список задач
+ - [ ] Добавление реализации функции dtpListen, dtpConnect
  - [ ] MC12101
     - [x] Добавление поддержки обмена через файл
     - [ ] Добавление поддержки буффера на NeuroMatrix
