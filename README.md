@@ -56,7 +56,7 @@ int main(){
     DtpImplementation impl;
     UserData com_spec;
     // инициализация данных
-    int d = dtpOpenCustom(&com_spec, &impl)
+    int d = dtpOpenCustom(&com_spec, &impl)  // возвращает d > 0 при успехе и -1 при провале получения дескриптора
     // код программы
 }
 ```
