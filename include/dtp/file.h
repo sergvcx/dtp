@@ -6,6 +6,7 @@ extern "C"{
 #endif //__cplusplus
 
     int dtpOpenFile(const char *filename, const char *mode);
+    int dtpOpenFile2(const char *filename_input, const char *filename_output);
 
 #ifdef __cplusplus
 }

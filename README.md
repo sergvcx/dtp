@@ -1,153 +1,93 @@
-# Desciptor transport protocol
+# nmassert
 
-Template for a feature rich and easy to read README
+# Editing this README
 
-## Intro
+When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
 
-So you just decided to add a README to your project. You want to create an easy
-to read and easy to navigate file.
+## Suggestions for a good README
+Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
 
-The question is: What should you do next?
+# DTP
+Descriptor transport protocol
 
-Should you create one from scratch? Find a silver bullet solution? Or is it
-better to customize an already existing file?
+## Описание
+Это библиотека является абстракцией асинхронной пересылки 32-разрядных данных между устройствами
 
-I'm going to show you how to create a README that fits your project, is easy
-to read and contains everyting you will ever need.
+## Использование
 
-## Feature overview
-
-*   [x] **Easy to read** like an article
-*   [x] **Feature overview and Contents** for fast orientation
-*   [ ] **Visuals** to keep users engaged
-
-## Contents
-
-*   [What is this?](#what-is-this)
-*   [When should I use this?](#when-should-i-use-this)
-*   [Getting started](#getting-started)
-    *   [Requirements](#requirements)
-    *   [Install](#install)
-    *   [Usage](#usage)
-*   [Here is where it's your turn](#here-is-where-its-your-turn)
-*   [Don't forget anything](#dont-forget-anything)
-    * [Used Technologies](#used-technologies)
-    * [Testing](#testing)
-    * [Logging](#logging)
-*   [Contribute](#contribute)
-*   [License](#license)
-*   [Sources](#sources)
-*   [Conclusion](#conclusion)
-
-## What is this?
-
-This project is an exhaustive README template that you can customize to your needs.
-You can either add sections you like or remove sections you don't like. But you have
-every time an example in front of you, from which you can derive from.
-
-## Why should I use this?
-
-There are many README templates out there so why this one? The two main reasons for this are
-that they contain often too little content or they are not easy to read or navigate through.
-
-## Getting Started
-
-So how do you get this template to work for your project? It is easier than you think.
-
-### Requirements
-
-* CMake
-* NMC-GCC компилятор для сборки под NeuroMatrix
-
-### Install
-
-Склонируйте репозиторий
-
-```
-git clone https://git.module.ru/nmc/dtp.git
+### Работа через файл
+```c++
+dtpOpenFile2("input.txt", "output.txt");
+int buf[20];
+dtpSend(buf, 20);       // write to "output" file
+dtpRecv(buf, 20);       // read from "input" file
 ```
 
-Соберите библиотеку для x86 используя генератор msvc:
-```
-cmake --preset x86-msvc
-```
+### Создание собственной реализации
+Дескриптор можно выделить использую собственные функции чтения-записи. Простейший способ создание собственную реализацию представлен ниже
+```c++
+struct UserData{
+    // ...
+};
 
-Либо Ninja
-```
-cmake --preset x86-ninja
-```
+int user_send(void *com_spec, DtpAsync *cmd){
+    UserData *data = (UserData *)com_spec;
+    // запуск асинхронной пересылки
+    return DTP_OK; // если всё успешно
+    return DTP_ERROR; // если произошла ошибка
+    return DTP_AGAIN; // если требуется попробовать попозже (например, в буфере обмена недостаточно места для записи новых данных)
+}
 
-Соберите библиотеку для nm:
-```
-cmake --preset nm-release
+int user_recv(void *com_spec, DtpAsync *cmd){
+    UserData *data = (UserData *)com_spec;
+    // запуск асинхронного приёма
+    return DTP_OK; // если всё успешно
+    return DTP_ERROR; // если произошла ошибка
+    return DTP_AGAIN; // если требуется попробовать попозже (например, из буфера нечего читать)
+}
+
+int user_get_status(void *com_spec, DtpAsync *cmd){
+    UserData *data = (UserData *)com_spec;
+    // получение статус транзакции
+    return DTP_ST_IN_PROCESS; // транзакция в процессе
+    return DTP_ST_DONE; // транзакция завершена
+    return DTP_ST_ERROR; // при транзакции произошла ошибка
+}
+
+int user_destroy(void *com_spec, DtpAsync *cmd){
+    UserData *data = (UserData *)com_spec;
+    // освобождение ресурсов (например удаление пользовательской структуры)
+    return 0; // если всё успешно
+    return 1; // если произошла ошибка
+}
+
+int main(){
+    DtpImplementation impl;
+    UserData com_spec;
+    // инициализация данных
+    int d = dtpOpenCustom(&com_spec, &impl)
+    // код программы
+}
 ```
 
 
+## Список задач
+ - [ ] MC12101
+    - [x] Добавление поддержки обмена через файл
+    - [ ] Добавление поддержки буффера на NeuroMatrix
+    - [ ] Добавление поддержки БЗИО
+    - [ ] Добавление поддержки DMA
+    - [ ] Добавление поддержки внешних байтовых коммуникационных портов
 
-### Usage
+## Contributing
+State if you are open to contributions and what your requirements are for accepting them.
 
+For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
 
+You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
 
-## Here is where it's your turn
-
-Here starts the main content of your README. This is why you did it for in the first place.
-To describe to future users of this project (including yourself) everything they need to know
-to be able to use it and understand it.
-
-Use visuals to help the reader understand better. An image, diagram, chart or code example says
-more than thousand words
-
-![Diagram](doc/diagram.jpg)
-
-## Don't forget anything
-
-Think hard about anything that is clear to you but might not be clear for others. Why are you
-using this aproach or why did you pick this solution instead?
-
-### Used technologies
-
-For sure mention all the technologies you used. If the technologies age in time you don't forget
-they are used and need to be replaced.
-
-### Testing
-
-No tests no sucess. You SHOULD have tests for every project, but do new users know how to run them?
-
-### Logging
-
-Logging is essential. How do you know something went wrong if the computer doesn't tell you? Logs
-are the first place to search for bugs. Explain to everybody how you can customize it or used it
-in the right way.
-
-## Contribute
-
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
-Please make sure to update tests as appropriate.
+## Authors and acknowledgment
+Show your appreciation to those who have contributed to the project.
 
 ## License
-[MIT](https://choosealicense.com/licenses/mit/)
-
-## Sources
-
-[react-markdown][react-markdown] - Project which served as an inspiration for this README
-
-[Blog post templates][blog-post-templates] - Used to structure this template as an easy to read blog post
-
-[About markdown][about-markdown] - Why should you use markdown?
-
-[Markdown Cheat Sheet][markdown-cheatsheet] - Get a fast overview of the syntax
-
-[//]: # "Source definitions"
-[react-markdown]: https://github.com/remarkjs/react-markdown "React-markdown project"
-[blog-post-templates]: https://backlinko.com/hub/content/blog-post-templates "Backlinko blog post templates"
-[about-markdown]: https://www.markdownguide.org/getting-started/ "Introduction to markdown"
-[markdown-cheatsheet]: https://www.markdownguide.org/cheat-sheet/ "Markdown Cheat Sheet"
-
-## Conclusion
-
-To summarize..
-
-We have an exhaustive README template with many features. The README is easy to read and navigate like an article.
-In our future projects we can use this template to get a great head start in creating a custom README.
-
+For open source projects, say how it is licensed.
