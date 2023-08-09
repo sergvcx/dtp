@@ -98,9 +98,9 @@ static int mc12101Status(void *com_spec, DtpAsync *aio){
 }
 
 static int mc12101Destroy(void *com_spec){
-    //Mc12101PloadFile *data = (Mc12101PloadFile *)com_spec;
+    Mc12101PloadFile *data = (Mc12101PloadFile *)com_spec;
     //FILE *file = (FILE *)data->file;
-    //fclose(file);
+    fclose(data->file);
     //delete data;
     return 0;
 }

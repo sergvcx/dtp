@@ -31,12 +31,20 @@ set(sources
 if(NM)
 set(SUFFIX -nm)
 list(APPEND sources 
-	src/nm/mc12101.cpp)
+	src/nm/mc12101.cpp
+	src/nm/ringbuffer.cpp
+	)
 else()
 set(SUFFIX -x64)
 list(APPEND sources 
-	src/pc/mc12101.cpp)
+	src/pc/mc12101.cpp
+	src/pc/ringbuffer.cpp
+	)
 target_include_directories(dtp PRIVATE $ENV{MC12101}/include)
+endif()
+
+if(UNIX)
+	target_compile_options(dtp PUBLIC -fpermissive)
 endif()
 
 target_sources(dtp PRIVATE ${sources})
@@ -45,6 +53,7 @@ target_include_directories(dtp
 		${CMAKE_CURRENT_LIST_DIR}/include
 	PRIVATE 
 		${CMAKE_CURRENT_LIST_DIR}/src
+		$ENV{HAL}/include
 		)
 
 set_target_properties(dtp PROPERTIES
