@@ -9,22 +9,38 @@ const int DTP_MC12101_STATUS_COUNT = 8;
 
 struct Mc12101PloadFile{
     FILE *file;
+    DtpAsync *pool[DTP_MC12101_STATUS_COUNT];
+    int status[DTP_MC12101_STATUS_COUNT];
 };
+
+
+
 
 static int mc12101Send(void *com_spec, DtpAsync *aio){
     Mc12101PloadFile *data = (Mc12101PloadFile *)com_spec;
     FILE *file = (FILE *)data->file;
 
     int message[DTP_MC12101_HOST_MESSAGE_SIZE];
-    volatile int status = 0;
 
     message[0] = (int)aio->buf;
-    message[1] = (int)(&status);
+    
+
+    bool founded = false;
+    while(!founded){
+        for(int i = 0; i < DTP_MC12101_STATUS_COUNT; i++){
+            if(data->status[i] == DTP_ST_DONE){
+                data->status[i] = DTP_ST_IN_PROCESS;
+                data->pool[i] = aio;
+                message[1] = (int)(&data->status[i]);
+                founded = true;
+                break;
+            }
+        }
+    }
 
     fwrite(message, sizeof(int), DTP_MC12101_HOST_MESSAGE_SIZE, file);
     fflush(file);
 
-    while(status == 0);
     return DTP_OK;
 }
 
@@ -36,12 +52,23 @@ static int mc12101Recv(void *com_spec, DtpAsync *aio){
     volatile int status = 0;
 
     message[0] = (int)aio->buf;
-    message[1] = (int)(&status);
+    
+    
+    bool founded = false;
+    while(!founded){
+        for(int i = 0; i < DTP_MC12101_STATUS_COUNT; i++){
+            if(data->status[i] == DTP_ST_DONE){
+                data->status[i] = DTP_ST_IN_PROCESS;
+                data->pool[i] = aio;
+                message[1] = (int)(&data->status[i]);
+                founded = true;
+                break;
+            }
+        }
+    }
 
     fwrite(message, sizeof(int), DTP_MC12101_HOST_MESSAGE_SIZE, file);
     fflush(file);
-    
-    while(status == 0);
 
     return DTP_OK;
 }
@@ -50,6 +77,23 @@ static int mc12101Status(void *com_spec, DtpAsync *aio){
     Mc12101PloadFile *data = (Mc12101PloadFile *)com_spec;
     FILE *file = (FILE *)data->file;
 
+    int ind = -1;
+    for(int i = 0; i < DTP_MC12101_STATUS_COUNT; i++){
+        if(aio == data->pool[i]){
+            ind = i;
+            break;
+        }
+    }
+    if(ind < 0) return DTP_ST_ERROR;
+
+    if(data->status[ind] == DTP_ST_IN_PROCESS) return DTP_ST_IN_PROCESS;
+
+    if(data->status[ind] == DTP_ST_DONE){
+        if(aio->sigevent == DTP_EVENT_CALLBACK){
+            aio->callback(aio->cb_data);
+        }
+        data->pool[ind] = 0;    
+    }
     return DTP_ST_DONE;
 }
 
@@ -73,6 +117,11 @@ extern "C"{
         if(com_spec->file == 0) {
            // delete com_spec;
             return -1;
+        }
+
+        for(int i = 0; i < DTP_MC12101_STATUS_COUNT; i++){
+            com_spec->status[i] = DTP_ST_DONE;
+            com_spec->pool[i] = 0;
         }
 
         DtpImplementation impl;

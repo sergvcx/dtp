@@ -31,7 +31,7 @@ static int mc12101Send(void *com_spec, DtpAsync *aio){
 
     PL_WriteMemBlock(data->access, (PL_Word *)aio->buf, message[0], aio->nwords);
 
-    int status = 1;
+    int status = DTP_ST_DONE;
     PL_WriteMemBlock(data->access, (PL_Word *)&status, message[1], 1);
 
     return DTP_OK;
@@ -45,7 +45,7 @@ static int mc12101Recv(void *com_spec, DtpAsync *aio){
 
     PL_ReadMemBlock(data->access, (PL_Word *)aio->buf, message[0], aio->nwords);
 
-    int status = 1;
+    int status = DTP_ST_DONE;
     PL_WriteMemBlock(data->access, (PL_Word *)&status, message[1], 1);
 
     return DTP_OK;
