@@ -21,7 +21,7 @@ static int fileRecv(void *com_spec, DtpAsync *aio){
 	//}
     //while (tell - start < aio->nwords * sizeof(int));  //fteel in bytes or words
 
-	size_t leftToRead32 = aio->nwords ;
+	size_t leftToRead32 = aio->nwords;
 	int* data = (int*)aio->buf;
 	while (leftToRead32) {
 		size_t rsize;
@@ -65,15 +65,18 @@ int dtpOpenFile(const char *filename, const char *mode){
     DtpImplementation impl;
 
     FILE *file = fopen(filename, mode);
-	if (file == 0) {
-		file = fopen(filename, "w");
-		if (file) {
-			fclose(file);
-			file = fopen(filename, mode);
-			if (file == 0) return -1;
-		}
-		else return -1;
-	}
+    if(file == 0){
+        return -1;
+    }
+	// if (file == 0) {
+	// 	file = fopen(filename, "w");
+	// 	if (file) {
+	// 		fclose(file);
+	// 		file = fopen(filename, mode);
+	// 		if (file == 0) return -1;
+	// 	}
+	// 	else return -1;
+	// }
 
     impl.recv_func = fileRecv;
     impl.send_func = fileSend;

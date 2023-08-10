@@ -17,6 +17,8 @@ extern "C" {
 
     int dtpOpenPloadRingbuffer(PL_Access *access, uintptr_t hal_ring_buffer_remote_addr);
 
+    int dtpOpenMc12101Ringbuffer(int boardIndex, int coreIndex, uintptr_t hal_ring_buffer_remote_addr);
+
 #ifdef __cplusplus
 }
 #endif

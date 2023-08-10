@@ -14,6 +14,8 @@ extern "C" {
 
     int dtpOpenRingbuffer(void *hal_ring_buffer, DtpMemCopyFuncT push_func, DtpMemCopyFuncT pop_func);
 
+    int dtpOpenRingbufferDefault(void *hal_ring_buffer);
+
 #ifdef __cplusplus
 }
 #endif
