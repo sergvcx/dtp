@@ -36,10 +36,10 @@ target_link_libraries(dtp-buffer-example
     )
 target_include_directories(dtp-buffer-example PUBLIC 
     ${CMAKE_CURRENT_LIST_DIR}/../../include
-    $ENV{MC12101}/lib
+    $ENV{MC12101}/include
     )
 target_link_directories(dtp-buffer-example PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/../../lib
-    #$ENV{MC12101}/include
+    $ENV{MC12101}/lib
     )
 #endif()

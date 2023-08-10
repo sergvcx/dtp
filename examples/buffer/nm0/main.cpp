@@ -22,16 +22,16 @@ int main(){
 
     int file_desc = dtpOpenFile(FILE,"wb");    
 
-    ring_host_input.init();
+    ring_host_input.init(1024);
     ring_host_input.data = data_host_input;
-    ring_host_output.init();
+    ring_host_output.init(2*1024);
     ring_host_output.data = data_host_output;
 
-    ring_nm1_input.init();
+    ring_nm1_input.init(4*1024);
     ring_nm1_input.data = data_nm1_input;
-    ring_nm1_output.init();
+    ring_nm1_output.init(8*1024);
     ring_nm1_output.data = data_nm1_output;
-    printf("input: %p, output: %p\n", &ring_host_input, &ring_host_output);
+    printf("input[%d]: %p, output[%d]: %p\n", ring_host_input.size, &ring_host_input, ring_host_output.size, &ring_host_output);
     printf("data_host_input: %p, data_host_output: %p\n", data_host_input, data_host_output);
     int offset = 0x40000 + 0x40000 * ncl_getProcessorNo();
 

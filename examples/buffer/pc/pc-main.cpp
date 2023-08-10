@@ -1,10 +1,9 @@
-#include "mc12101load.h"
 #include "dtp/dtp.h"
 #include "dtp/file.h"
 #include "dtp/mc12101-host.h"
 #include "stdio.h"
 
-#define FILE "../exchange.bin"
+#define FILE "exchange.bin"
 
 int main(){
 
