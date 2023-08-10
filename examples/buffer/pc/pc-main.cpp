@@ -21,6 +21,8 @@ int main(){
     printf("addr_read %p\n", addr_read);
     dtpClose(file_desc);
 
+    // -------------------------------------------------------------
+
 
     int dw = dtpOpenMc12101Ringbuffer(0, 0, addr_write);
     int dr = dtpOpenMc12101Ringbuffer(0, 0, addr_read);

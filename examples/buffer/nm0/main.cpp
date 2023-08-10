@@ -33,11 +33,11 @@ int main(){
     ring_nm1_output.data = data_nm1_output;
     printf("input: %p, output: %p\n", &ring_host_input, &ring_host_output);
     printf("data_host_input: %p, data_host_output: %p\n", data_host_input, data_host_output);
+    int offset = 0x40000 + 0x40000 * ncl_getProcessorNo();
 
     // write to file addr of pc-nm0 ring buffers
     int ring_input_addr = (int)&ring_host_input;
-    int ring_output_addr = (int)&ring_host_output;
-    int offset = 0x40000 + 0x40000 * ncl_getProcessorNo();
+    int ring_output_addr = (int)&ring_host_output;    
     if(ring_input_addr < 0x80000) ring_input_addr+=offset;
     if(ring_output_addr < 0x80000) ring_output_addr+=offset;
     printf("ring_input_addr %p, ring_output_addr %p\n", ring_input_addr, ring_output_addr);
@@ -53,6 +53,8 @@ int main(){
     dtpSend(file_desc, &ring_input_addr, 1);
     dtpSend(file_desc, &ring_output_addr, 1);
     dtpClose(file_desc);
+
+    // -------------------------------------------------------------
 
     
     //--------------pc-nm0----------------
