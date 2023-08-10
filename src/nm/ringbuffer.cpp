@@ -36,6 +36,9 @@ int dtpOpenRingbuffer(void *hal_ring_buffer, DtpMemCopyFuncT push_func, DtpMemCo
     connector->init((HalRingBufferData<int, DTP_RING_BUFFER_SIZE_32> *) hal_ring_buffer, push_func, pop_func);
 
     DtpImplementation impl;
+	impl.recv_func=halRbRecv;
+	impl.send_func=halRbSend;
+	impl.get_status_func=halRbStatus;
     return dtpOpenCustom(connector, &impl);
 
 

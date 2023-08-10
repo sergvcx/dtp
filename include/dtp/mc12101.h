@@ -2,7 +2,7 @@
 #define __DTP_MC12101_H_INCLUDED__
 #include "stdint.h"
 
-#define DTP_RING_BUFFER_SIZE_32 (8 * 128 * 128)
+#define DTP_RING_BUFFER_SIZE_32 (4 * 128 * 128)
 
 typedef void* (*DtpMemCopyFuncT)(const void *src, void *dst, unsigned int size32);
 

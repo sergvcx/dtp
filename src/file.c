@@ -21,15 +21,15 @@ static int fileRecv(void *com_spec, DtpAsync *aio){
 	//}
     //while (tell - start < aio->nwords * sizeof(int));  //fteel in bytes or words
 
-	size_t leftToRead = aio->nwords * sizeof(int);
+	size_t leftToRead32 = aio->nwords ;
 	int* data = (int*)aio->buf;
-	while (leftToRead) {
+	while (leftToRead32) {
 		size_t rsize;
-		if (leftToRead< 256)
-			rsize = fread(data, sizeof(int), leftToRead, file);
+		if (leftToRead32< 1024)
+			rsize = fread(data, sizeof(int), leftToRead32, file);
 		else 
-			rsize = fread(data, sizeof(int), 256, file);
-		leftToRead -= rsize;
+			rsize = fread(data, sizeof(int), 1024, file);
+		leftToRead32 -= rsize;
 		data+= rsize;
 		int tell = ftell(file);
 		printf(" rsize=%d tell=%d\n", rsize, tell);
