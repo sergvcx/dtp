@@ -39,7 +39,7 @@ set(SUFFIX -x64)
 list(APPEND sources 
 	src/pc/mc12101.cpp
 	src/pc/ringbuffer.cpp
-	src/pc/socket.c
+	src/pc/socket.cpp
 	)
 target_include_directories(dtp PRIVATE $ENV{MC12101}/include)
 endif()

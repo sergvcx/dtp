@@ -9,7 +9,7 @@ int main(){
     printf("ok %d\n", ok);
     if(ok < 0) return 0;
 
-    int data[2] = {1, 1};
+    int data[2] = {1, 2};
     dtpSend(desc, data, 2);
 
     dtpRecv(desc, data, 2);
