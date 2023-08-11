@@ -51,7 +51,6 @@ typedef struct {
     int (*destroy_func)(void *com_spec);
     int (*listen)(void *com_spec);
     int (*connect)(void *com_spec);
-    // int (*state_update)(void *com_spec); //optional func for io device without hardware callback functions
 } DtpImplementation;
 
 

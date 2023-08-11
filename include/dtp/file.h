@@ -7,6 +7,7 @@ extern "C"{
 
     int dtpOpenFile(const char *filename, const char *mode);
     int dtpOpenFile2(const char *filename_input, const char *filename_output);
+    //int dtpOpenFileRingBuffer(const char *filename, const char *mode, int size);
 
 #ifdef __cplusplus
 }

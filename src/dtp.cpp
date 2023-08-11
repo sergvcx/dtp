@@ -98,16 +98,30 @@ extern "C"{
     }
 
     int dtpConnect(int desc){
-        return DTP_ERROR;
+        int no = getIndexFromDesc(desc);
+        DtpImplementation *impl = &dtp_objects[no].implementaion;
+        void* com_spec = dtp_objects[no].com_spec;
+        if(impl->connect){
+            return impl->connect(com_spec);
+        }else{
+            return DTP_ERROR;
+        }
     }
 
     int dtpListen(int desc){
-        return DTP_ERROR;
+        int no = getIndexFromDesc(desc);
+        DtpImplementation *impl = &dtp_objects[no].implementaion;
+        void* com_spec = dtp_objects[no].com_spec;
+        if(impl->listen){
+            return impl->listen(com_spec);
+        }else{
+            return DTP_ERROR;
+        }
     }
 
 
     int dtpClose(int desc){
-        int no = getIndexFromDesc(desc);    
+        int no = getIndexFromDesc(desc);
         DtpImplementation *impl = &dtp_objects[no].implementaion;
         void* com_spec = dtp_objects[no].com_spec;
         int error = impl->destroy_func(com_spec);
