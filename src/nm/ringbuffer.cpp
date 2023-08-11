@@ -30,14 +30,15 @@ static int halRbStatus(void *com_spec, DtpAsync *task){
 }
 static int halRbDestroy(void *com_spec){
     //BoardData *board= (BoardData *) board;
+	free(com_spec);
     return 0;
 }
 
 
-static HalRingBufferConnector<int, DTP_RING_BUFFER_SIZE_32> ringbuffer_connector;
+//static HalRingBufferConnector<int, DTP_RING_BUFFER_SIZE_32> ringbuffer_connector;
 
 int dtpOpenRingbuffer(void *hal_ring_buffer, DtpMemCopyFuncT push_func, DtpMemCopyFuncT pop_func){
-    HalRingBufferConnector<int, DTP_RING_BUFFER_SIZE_32> *connector = &ringbuffer_connector;
+    HalRingBufferConnector<int, DTP_RING_BUFFER_SIZE_32> *connector =  (HalRingBufferConnector<int, DTP_RING_BUFFER_SIZE_32> *) malloc( sizeof( HalRingBufferConnector<int, DTP_RING_BUFFER_SIZE_32>));
 
     connector->init((HalRingBufferData<int, DTP_RING_BUFFER_SIZE_32> *) hal_ring_buffer, push_func, pop_func);
 
@@ -67,10 +68,11 @@ int dtpOpenRingbufferDefault(void *hal_ring_buffer){
 	printf("size     :%d\n",connector->size);
 	printf("size1    :%d\n",connector->size1);
 	printf("data     :%x\n",connector->data);
-    impl.connect = 0;
+    
+    DtpImplementation impl;
+	impl.connect = 0;
     impl.listen = 0;
 
-    DtpImplementation impl;
 	impl.recv=halRbRecv;
 	impl.send=halRbSend;
 	impl.get_status=halRbStatus;
