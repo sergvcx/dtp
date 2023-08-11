@@ -1,6 +1,5 @@
 # DTP
-Descriptor transport protocol
-
+Descriptor transport   protocol 
 ## Описание
 Это библиотека является абстракцией асинхронной пересылки 32-разрядных данных между устройствами
 
