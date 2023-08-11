@@ -50,7 +50,7 @@ int user_destroy(void *com_spec, DtpAsync *cmd){
     UserData *data = (UserData *)com_spec;
     // освобождение ресурсов (например удаление пользовательской структуры)
     return 0; // если всё успешно
-    return 1; // если произошла ошибка
+    return -1; // если произошла ошибка
 }
 
 int main(){

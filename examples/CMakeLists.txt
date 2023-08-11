@@ -8,4 +8,5 @@ add_subdirectory(file2)
 
 if(NOT NM)
     add_subdirectory(buffer)
+    add_subdirectory(socket)
 endif()

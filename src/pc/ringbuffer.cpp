@@ -61,7 +61,7 @@ static int halRbDestroy2(void *com_spec){
 static BoardData board_data;
 
 void halSleep(int msec){
-    
+
 }
 
 int dtpOpenPloadRingbuffer(PL_Access *access, uintptr_t hal_ring_buffer_remote_addr){
@@ -75,10 +75,12 @@ int dtpOpenPloadRingbuffer(PL_Access *access, uintptr_t hal_ring_buffer_remote_a
     data->connector.init(ringbuffer_data, rbMemCopyPush, rbMemCopyPop);
 
     DtpImplementation impl;
-    impl.recv_func = halRbRecv;
-    impl.send_func = halRbSend;
-    impl.get_status_func = halRbStatus;
-    impl.destroy_func = halRbDestroy;
+    impl.recv = halRbRecv;
+    impl.send = halRbSend;
+    impl.get_status = halRbStatus;
+    impl.destroy = halRbDestroy;
+    impl.connect = 0;
+    impl.listen = 0;
     return dtpOpenCustom(data, &impl);
 }
 
@@ -106,10 +108,12 @@ int dtpOpenMc12101Ringbuffer(int boardIndex, int coreIndex, uintptr_t hal_ring_b
     com_spec->connector.init(ringbuffer_data, rbMemCopyPush, rbMemCopyPop);
 
     DtpImplementation impl;
-    impl.send_func = halRbSend;
-    impl.recv_func = halRbRecv;
-    impl.get_status_func = halRbStatus;
-    impl.destroy_func = halRbDestroy2;
+    impl.send = halRbSend;
+    impl.recv = halRbRecv;
+    impl.get_status = halRbStatus;
+    impl.destroy = halRbDestroy2;
+    impl.connect = 0;
+    impl.listen = 0;
 
     return dtpOpenCustom(com_spec, &impl); 
 }

@@ -125,10 +125,12 @@ extern "C"{
         }
 
         DtpImplementation impl;
-        impl.send_func = mc12101Send;
-        impl.recv_func = mc12101Recv;
-        impl.get_status_func = mc12101Status;
-        impl.destroy_func = mc12101Destroy;
+        impl.send = mc12101Send;
+        impl.recv = mc12101Recv;
+        impl.get_status = mc12101Status;
+        impl.destroy = mc12101Destroy;
+        impl.connect = 0;
+        impl.listen = 0;
 
         
         return dtpOpenCustom(com_spec, &impl);  

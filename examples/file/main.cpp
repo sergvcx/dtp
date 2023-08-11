@@ -31,9 +31,9 @@ int main(){
     FILE *file = fopen("simple.txt", "w");
     
     DtpImplementation impl;    
-    impl.recv_func = fileRecv;
-    impl.send_func = fileSend;
-    impl.destroy_func = fileDestroy;    
+    impl.recv = fileRecv;
+    impl.send = fileSend;
+    impl.destroy = fileDestroy;    
     int desc = dtpOpenCustom(file, &impl);
 
     const char *str = "This is text\n";

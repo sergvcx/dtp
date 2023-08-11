@@ -29,10 +29,12 @@ extern "C"{
             if(dtp_objects[i].is_used == 0){
                 dtp_objects[i].fd = i + 1;
                 dtp_objects[i].com_spec = com_spec;
-                dtp_objects[i].implementaion.recv_func  = implementation->recv_func;
-                dtp_objects[i].implementaion.send_func = implementation->send_func;
-                dtp_objects[i].implementaion.get_status_func = implementation->get_status_func;                
-                dtp_objects[i].implementaion.destroy_func = implementation->destroy_func;
+                dtp_objects[i].implementaion.recv  = implementation->recv;
+                dtp_objects[i].implementaion.send = implementation->send;
+                dtp_objects[i].implementaion.get_status = implementation->get_status;                
+                dtp_objects[i].implementaion.destroy = implementation->destroy;
+                dtp_objects[i].implementaion.listen = implementation->listen;
+                dtp_objects[i].implementaion.connect = implementation->connect;
                 dtp_objects[i].is_used = 1;
                 return dtp_objects[i].fd;
             }
@@ -124,7 +126,7 @@ extern "C"{
         int no = getIndexFromDesc(desc);
         DtpImplementation *impl = &dtp_objects[no].implementaion;
         void* com_spec = dtp_objects[no].com_spec;
-        int error = impl->destroy_func(com_spec);
+        int error = impl->destroy(com_spec);
         dtp_objects[no].is_used = 0;
         return error;
     }
@@ -134,21 +136,21 @@ extern "C"{
         int no = getIndexFromDesc(desc);    
         DtpImplementation *impl = &dtp_objects[no].implementaion;
         void* com_spec = dtp_objects[no].com_spec;
-        return impl->recv_func(com_spec, task);
+        return impl->recv(com_spec, task);
     }
 
     int dtpAsyncSend(int desc, DtpAsync *task){
         int no = getIndexFromDesc(desc);    
         DtpImplementation *impl = &dtp_objects[no].implementaion;
         void* com_spec = dtp_objects[no].com_spec;
-        return impl->send_func(com_spec, task);
+        return impl->send(com_spec, task);
     }
 
     int dtpAsyncStatus(int desc, DtpAsync *task){
         int no = getIndexFromDesc(desc);    
         DtpImplementation *impl = &dtp_objects[no].implementaion;
         void* com_spec = dtp_objects[no].com_spec;
-        return impl->get_status_func(com_spec, task);
+        return impl->get_status(com_spec, task);
     }
 
     int dtpAsyncWait(int desc, DtpAsync *task){        

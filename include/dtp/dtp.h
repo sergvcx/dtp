@@ -45,10 +45,10 @@ typedef enum {
 
 
 typedef struct {
-    int (*send_func)(void *com_spec, DtpAsync *task);
-    int (*recv_func)(void *com_spec, DtpAsync *task);
-    int (*get_status_func)(void *com_spec, DtpAsync *task);    
-    int (*destroy_func)(void *com_spec);
+    int (*send)(void *com_spec, DtpAsync *task);
+    int (*recv)(void *com_spec, DtpAsync *task);
+    int (*get_status)(void *com_spec, DtpAsync *task);    
+    int (*destroy)(void *com_spec);
     int (*listen)(void *com_spec);
     int (*connect)(void *com_spec);
 } DtpImplementation;

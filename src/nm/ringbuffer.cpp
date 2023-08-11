@@ -42,9 +42,9 @@ int dtpOpenRingbuffer(void *hal_ring_buffer, DtpMemCopyFuncT push_func, DtpMemCo
     connector->init((HalRingBufferData<int, DTP_RING_BUFFER_SIZE_32> *) hal_ring_buffer, push_func, pop_func);
 
     DtpImplementation impl;
-	impl.recv_func=halRbRecv;
-	impl.send_func=halRbSend;
-	impl.get_status_func=halRbStatus;
+	impl.recv=halRbRecv;
+	impl.send=halRbSend;
+	impl.get_status=halRbStatus;
     return dtpOpenCustom(connector, &impl);
 }
 
@@ -67,11 +67,14 @@ int dtpOpenRingbufferDefault(void *hal_ring_buffer){
 	printf("size     :%d\n",connector->size);
 	printf("size1    :%d\n",connector->size1);
 	printf("data     :%x\n",connector->data);
+    impl.connect = 0;
+    impl.listen = 0;
+
     DtpImplementation impl;
-	impl.recv_func=halRbRecv;
-	impl.send_func=halRbSend;
-	impl.get_status_func=halRbStatus;
-    impl.destroy_func = 0;
+	impl.recv=halRbRecv;
+	impl.send=halRbSend;
+	impl.get_status=halRbStatus;
+    impl.destroy = 0;
     return dtpOpenCustom(connector, &impl);
 }
 

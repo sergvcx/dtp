@@ -78,10 +78,12 @@ int dtpOpenFile(const char *filename, const char *mode){
 	// 	else return -1;
 	// }
 
-    impl.recv_func = fileRecv;
-    impl.send_func = fileSend;
-    impl.get_status_func = fileStatus;
-    impl.destroy_func = fileDestroy;
+    impl.recv = fileRecv;
+    impl.send = fileSend;
+    impl.get_status = fileStatus;
+    impl.destroy = fileDestroy;
+    impl.connect = 0;
+    impl.listen = 0;
     return dtpOpenCustom(file, &impl);
 }
 
@@ -142,9 +144,9 @@ int dtpOpenFile2(const char *file_input, const char *file_output){
     }
 
 
-    impl.recv_func = file2Recv;
-    impl.send_func = file2Send;
-    impl.get_status_func = file2Status;
-    impl.destroy_func = file2Destroy;
+    impl.recv = file2Recv;
+    impl.send = file2Send;
+    impl.get_status = file2Status;
+    impl.destroy = file2Destroy;
     return dtpOpenCustom(fileData, &impl);
 }
