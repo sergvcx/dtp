@@ -58,18 +58,7 @@ static int socketDestroy(void *com_spec){
 static int socketListen(void *com_spec){
     SocketData *sock = (SocketData *)com_spec;
 
-#ifdef UNIX 
-    struct sockaddr_in addr;
-    sock->listener = socket(AF_INET, SOCK_STREAM, 0);
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(sock->port);
-    addr.sin_addr.s_addr = htonl(INADDR_ANY);
-
-    if(bind(sock->listener, (struct sockaddr *)&addr, sizeof(addr)) < 0)
-    {
-        return -1;
-    }
-#else
+#ifdef _WIN32 
     struct addrinfo hints;
     ZeroMemory(&hints, sizeof(hints));
     hints.ai_family = AF_INET;
@@ -85,6 +74,19 @@ static int socketListen(void *com_spec){
     sock->listener = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 
     iResult = bind(sock->listener, result->ai_addr, (int)result->ai_addrlen);
+
+    
+#else
+    struct sockaddr_in addr;
+    sock->listener = socket(AF_INET, SOCK_STREAM, 0);
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(sock->port);
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    if(bind(sock->listener, (struct sockaddr *)&addr, sizeof(addr)) < 0)
+    {
+        return -1;
+    }
 #endif    
 
     if(listen(sock->listener, 1) < 0){
@@ -120,13 +122,15 @@ static int socketConnect(void *com_spec){
     sock->desc = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
     return connect( sock->desc, result->ai_addr, (int)result->ai_addrlen);
 #else
-    memset(&sock->addr, '0', sizeof(sock->addr)); 
+    
 
-    sock->addr.sin_family = AF_INET;
-    sock->addr.sin_port = htons(sock->port);
-    sock->addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    struct sockaddr_in serv_addr; 
+    memset(&serv_addr, '0', sizeof(serv_addr)); 
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(sock->port);
+    serv_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     sock->desc = socket(AF_INET, SOCK_STREAM, 0); 
-    return connect(sock->desc, &sock->addr, sizeof(sock->addr));
+    return connect(sock->desc, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 #endif
     
 }

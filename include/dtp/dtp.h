@@ -53,6 +53,12 @@ typedef struct {
     int (*connect)(void *com_spec);
 } DtpImplementation;
 
+// typedef enum{
+//     DTP_READ_ONLY,
+//     DTP_WRITE_ONLY,
+//     DTP_READWRITE
+// } DtpMode;
+
 
 
 //all sizes, widths, strides and offsets in bytes

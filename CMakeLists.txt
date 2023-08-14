@@ -55,6 +55,7 @@ target_include_directories(dtp
 	PRIVATE 
 		${CMAKE_CURRENT_LIST_DIR}/src
 		$ENV{HAL}/include
+		$ENV{MC12101}/include
 		)
 
 set_target_properties(dtp PROPERTIES

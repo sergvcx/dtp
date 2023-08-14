@@ -58,16 +58,16 @@ static int halRbDestroy2(void *com_spec){
     return ok1;
 }
 
-static BoardData board_data;
+// static BoardData board_data;
 
-void halSleep(int msec){
+// void halSleep(int msec){
 
-}
+// }
 
 int dtpOpenPloadRingbuffer(PL_Access *access, uintptr_t hal_ring_buffer_remote_addr){
     HalRingBufferData<int, DTP_RING_BUFFER_SIZE_32> *ringbuffer_data = (HalRingBufferData<int, DTP_RING_BUFFER_SIZE_32> *)hal_ring_buffer_remote_addr;
 
-    BoardData *data = &board_data; // new BoardData();
+    BoardData *data = (BoardData *) malloc( sizeof(BoardData) );
     if(data == 0) return -1;
 
     data->access = access;
