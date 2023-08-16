@@ -8,10 +8,10 @@ static PL_Access *global_access = 0;
 
 
 struct BoardData{
+    HalRingBufferConnector<int, DTP_RING_BUFFER_SIZE_32> connector;
     PL_Access *access;
 
     PL_Board *board;
-    HalRingBufferConnector<int, DTP_RING_BUFFER_SIZE_32> connector;
 };
 
 extern "C"{

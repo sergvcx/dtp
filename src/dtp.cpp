@@ -19,7 +19,7 @@ extern "C"{
     }
 
 
-    void *dtpGetUserData(int desc){
+    void *dtpGetComSpec(int desc){
         int i = getIndexFromDesc(desc);
         return dtp_objects[i].com_spec;
     }
