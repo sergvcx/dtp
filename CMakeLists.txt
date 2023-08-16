@@ -33,7 +33,14 @@ set(SUFFIX -nm)
 list(APPEND sources 
 	src/nm/mc12101.cpp
 	src/nm/ringbuffer.cpp
+	src/nm/semaphore.S
+	src/nm/dma.cpp
+	src/nm/buffer.cpp
 	)
+set_source_files_properties(
+	src/nm/semaphore.S
+	PROPERTIES
+		COMPILE_FLAGS -mgas)
 else()
 set(SUFFIX -x64)
 list(APPEND sources 
@@ -65,6 +72,9 @@ set_target_properties(dtp PROPERTIES
 	ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_LIST_DIR}/lib
 	ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_LIST_DIR}/lib
 	)
-
+enable_testing()
 add_subdirectory(examples)
+add_subdirectory(tests)
+
+
 

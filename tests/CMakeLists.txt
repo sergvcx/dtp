@@ -2,4 +2,8 @@ cmake_minimum_required(VERSION 3.16.0 FATAL_ERROR)
 
 project(dtp-tests)
 
-add_subdirectory(mc12101)
+#add_subdirectory(mc12101)
+
+if(NM)
+    add_subdirectory(nm6407)
+endif()

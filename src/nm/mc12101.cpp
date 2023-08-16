@@ -6,6 +6,8 @@
 #include "string.h"
 #include "dtp/mc12101.h"
 
+#include "ringbuffer.h"
+
 
 const int DTP_MC12101_HOST_MESSAGE_SIZE = 2;
 const int DTP_MC12101_STATUS_COUNT = 8;
@@ -16,7 +18,7 @@ struct Mc12101PloadFile{
     int status[DTP_MC12101_STATUS_COUNT];
 };
 
-
+int ncl_getProcessorNo(void);
 
 
 static int mc12101Send(void *com_spec, DtpAsync *aio){
@@ -204,12 +206,23 @@ int dtpOpenRingbuffer(void *hal_ring_buffer, DtpMemCopyFuncT push_func, DtpMemCo
         DtpImplementation impl;
     	impl.connect = 0;
         impl.listen = 0;
-
     	impl.recv=halRbRecv;
     	impl.send=halRbSend;
     	impl.get_status=halRbStatus;
-        impl.destroy = 0;
+        impl.destroy = halRbDestroy;
         return dtpOpenCustom(connector, &impl);
     }
+
+
+extern int dtp_buffer0_data_in [DTP_BUFFER_SIZE];
+extern int dtp_buffer0_data_out[DTP_BUFFER_SIZE];
+extern int dtp_buffer1_data_in [DTP_BUFFER_SIZE];
+extern int dtp_buffer1_data_out[DTP_BUFFER_SIZE];
+extern int dtp_buffer2_data_in [DTP_BUFFER_SIZE];
+extern int dtp_buffer2_data_out[DTP_BUFFER_SIZE];
+extern int dtp_buffer3_data_in [DTP_BUFFER_SIZE];
+extern int dtp_buffer3_data_out[DTP_BUFFER_SIZE];
+
+  
 
 }
