@@ -47,6 +47,7 @@ list(APPEND sources
 	src/pc/mc12101.cpp
 	src/pc/ringbuffer.cpp
 	src/pc/socket.cpp
+	src/pc/buffer.cpp
 	)
 target_include_directories(dtp PRIVATE $ENV{MC12101}/include)
 endif()

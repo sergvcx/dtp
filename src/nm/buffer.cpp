@@ -31,10 +31,8 @@ extern "C" {
         int size = cmd->nwords;
 
         int capacity = dtpRingBufferGetCapacity(data->rb_out);
-        printf("capacity %d\n", capacity);
 
         if(cmd->type == DTP_TASK_1D){
-            printf("size %d\n", size);
             while(size > 0){
                 int head = dtpRingBufferGetHead(data->rb_out);
                 int tail = dtpRingBufferGetTail(data->rb_out);

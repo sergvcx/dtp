@@ -9,8 +9,7 @@ set(targets
     test-nm6407-buffer-nm0
     test-nm6407-buffer-nm1
 )
-target_compile_definitions(test-nm6407-buffer-nm0 PUBLIC CORE0)
-target_compile_definitions(test-nm6407-buffer-nm1 PUBLIC CORE1)
+target_compile_definitions(test-nm6407-buffer-nm0 PUBLIC LISTEN)
 target_link_options(test-nm6407-dma PUBLIC -Wl,-T${CMAKE_CURRENT_LIST_DIR}/mc12101brd-nm0.lds	)
 target_link_options(test-nm6407-buffer-nm0 PUBLIC -Wl,-T${CMAKE_CURRENT_LIST_DIR}/mc12101brd-nm0.lds	)
 target_link_options(test-nm6407-buffer-nm1 PUBLIC -Wl,-T${CMAKE_CURRENT_LIST_DIR}/mc12101brd-nm1.lds	)

@@ -4,7 +4,6 @@
 #include "dtp/buffer.h"
 
 typedef struct DtpRingBuffer32 DtpRingBuffer32;
-typedef struct HalAccess HalAccess;
 
 #define DTP_BUFFER_SIZE 64
 #define DTP_BUFFER_COUNT 4

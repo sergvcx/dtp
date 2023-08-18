@@ -6,4 +6,6 @@ project(dtp-tests)
 
 if(NM)
     add_subdirectory(nm6407)
+else()
+    add_subdirectory(x86)
 endif()

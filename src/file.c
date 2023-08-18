@@ -11,15 +11,7 @@ typedef struct {
 static int fileRecv(void *com_spec, DtpAsync *aio){
     FILE *file = (FILE*)com_spec;
 	
-	size_t start = ftell(file);
-	printf(" start=%d\n", start);
-	//size_t tell;
-	//do {
-	//	fseek(file, 0, SEEK_CUREND);
-	//	tell = ftell(file);
-	//	
-	//}
-    //while (tell - start < aio->nwords * sizeof(int));  //fteel in bytes or words
+	size_t start = ftell(file);	
 
 	size_t leftToRead32 = aio->nwords;
 	int* data = (int*)aio->buf;
@@ -32,15 +24,7 @@ static int fileRecv(void *com_spec, DtpAsync *aio){
 		leftToRead32 -= rsize;
 		data+= rsize;
 		int tell = ftell(file);
-		printf(" rsize=%d tell=%d\n", rsize, tell);
-	}
-	
-
-	//printf(" tell=%d\n", tell);
-
-	//fseek(file, start*4/sizeof(int), SEEK_SET);
-
-    //size_t rsize = fread((void*)aio->buf, sizeof(int), aio->nwords, file);
+	}	
 	
     return 0;
 }
