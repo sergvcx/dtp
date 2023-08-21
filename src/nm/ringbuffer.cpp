@@ -52,9 +52,7 @@ void dtpRingBufferInit(DtpRingBuffer32 *ringbuffer, void *data, int capacity){
     int value_read;
     int value_write;
     nm_sem_getvalue(&ringbuffer->write_semaphore, &value_write);
-    nm_sem_getvalue(&ringbuffer->read_semaphore, &value_read);
-    printf("read sem %p %d\n", &ringbuffer->read_semaphore, value_read);
-    printf("write sem %p %d\n", &ringbuffer->write_semaphore, value_write);
+    nm_sem_getvalue(&ringbuffer->read_semaphore, &value_read);    
     ringbuffer->head = 0;
     ringbuffer->tail = 0;
     ringbuffer->is_inited = 1;

@@ -19,12 +19,12 @@ SECTIONS
 	.init : ALIGN(0x8)
 	{
 		*(.init);
-	} > C0_IMU0
+	} > C1_IMU0
 
 	.fini : ALIGN(0x8)
 	{
 		*(.fini);
-	} > C0_IMU0
+	} > C1_IMU0
 
 	.data : ALIGN(0x8)
 	{
@@ -34,12 +34,12 @@ SECTIONS
 	.bss : ALIGN(0x8)
 	{
 		*(.bss);
-	} > C0_IMU0
+	} > C1_IMU0
 
 	.stack : ALIGN(0x8)
 	{
 		*(.stack);
-	} > C0_IMU0
+	} > C1_IMU0
 
 	.heap : ALIGN(0x8){
 		*(.heap)

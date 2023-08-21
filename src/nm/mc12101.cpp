@@ -8,9 +8,91 @@
 
 #include "ringbuffer.h"
 
-
 const int DTP_MC12101_HOST_MESSAGE_SIZE = 2;
 const int DTP_MC12101_STATUS_COUNT = 8;
+
+struct PloadTargetData{
+    DtpAsync *pool[DTP_MC12101_STATUS_COUNT];
+    int status[DTP_MC12101_STATUS_COUNT];
+    int desc;
+    int index;    
+};
+
+static int dtpOpenPloadTargetImplListen(void *com_spec){
+    PloadTargetData *data = (PloadTargetData *)com_spec;
+    return dtpListen(data->desc);
+}
+
+static int dtpOpenPloadTargetGetStatus(void *com_spec, DtpAsync *aio){
+    PloadTargetData *data = (PloadTargetData *)com_spec;
+
+    for(int i = 0; i < DTP_MC12101_STATUS_COUNT; i++){
+        if(aio == data->pool[i]){
+            if(data->status[i] == DTP_ST_WAIT_ACCEPT)
+                data->status[i] = DTP_ST_DONE;
+            return data->status[i];
+        }
+    }
+    return DTP_ST_ERROR;
+}
+
+static int dtpOpenPloadTargetSendAddr(void *com_spec, DtpAsync *aio){
+    PloadTargetData *data = (PloadTargetData *)com_spec;
+
+    int message[2];
+    bool founded = false;
+    message[0] = (int)aio->buf;
+    printf("message[0] 0x%x\n", message[0]);
+    while(!founded){
+        for(int i = 0; i < DTP_MC12101_STATUS_COUNT; i++){
+            if(data->status[i] == DTP_ST_DONE){
+                data->status[i] = DTP_ST_IN_PROCESS;
+                data->pool[i] = aio;
+                message[1] = (int)(&data->status[i]);
+                founded = true;
+                break;
+            }
+        }
+    }
+    if(founded){
+        dtpSend(data->desc, message, 2);
+        return DTP_OK;
+    } else {
+        return DTP_AGAIN;
+    }
+}
+
+int dtpOpenPloadTargetImplDestroy(void *com_spec){
+    PloadTargetData *data = (PloadTargetData *)com_spec;
+    dtpClose(data->desc);
+    free(data);
+}
+
+
+int dtpOpenPloadTarget(int index){
+    PloadTargetData *com_spec = (PloadTargetData *)malloc(sizeof(PloadTargetData));
+    if(com_spec == 0) return -1;
+
+    com_spec->index = 0;
+    for(int i = 0; i < DTP_MC12101_STATUS_COUNT; i++){
+        com_spec->status[i] = DTP_ST_DONE;
+        com_spec->pool[i] = 0;
+    }
+    com_spec->desc = dtpOpenSharedBuffer(index);
+
+    DtpImplementation impl;
+    impl.recv = dtpOpenPloadTargetSendAddr;
+    impl.send = dtpOpenPloadTargetSendAddr;
+    impl.listen = dtpOpenPloadTargetImplListen;
+    impl.connect = 0;
+    impl.get_status = dtpOpenPloadTargetGetStatus;
+    impl.destroy = dtpOpenPloadTargetImplDestroy;
+    return dtpOpenCustom(com_spec, &impl);
+}
+
+
+
+
 
 struct Mc12101PloadFile{
     FILE *file;
@@ -19,6 +101,7 @@ struct Mc12101PloadFile{
 };
 
 int ncl_getProcessorNo(void);
+
 
 
 static int mc12101Send(void *com_spec, DtpAsync *aio){

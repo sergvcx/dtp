@@ -1,67 +1,39 @@
-#include "hal/hal-host.h"
 #include <iostream>
 #include "dtp/dtp.h"
-#include "dtp/dtp-hal.h"
-#include "dtp/ringbuffer.h"
+#include "dtp/mc12101-host.h"
+#include "mc12101load.h"
 
 #undef NDEBUG
 #include "assert.h"
 
-HalAccess *global_access;
+extern "C" void halSleep(int msec){
 
-HalAccess *getTestAccess(){
-    return global_access;
 }
 
 void test_singleBuffer_shouldDoneCorrect(){
-    HalAccess *access = getTestAccess();
-    int value = halSync(access, 0, NULL);
+    PL_Board *board;
+    PL_Access *access;
+    PL_GetBoardDesc(0, &board);
+    PL_GetAccess(board, 0, &access);
+    int desc = dtpOpenPloadHost(0, access, (DtpBufferCopyFuncT)PL_ReadMemBlock, (DtpBufferCopyFuncT)PL_WriteMemBlock);
 
-    DtpRingBuffer32 *rb = dtpRingBufferBind(access, (uintptr_t)value);
+    int ok = dtpConnect(desc);
+    assert(ok == DTP_OK);
 
-    int desc = dtpOpenBuffer(rb);
+    int data[2] = {1, 2};
+    dtpSend(desc, data, 2);
 
-    int buf[2];
-    buf[0] = 0xCDCDCDCD;
-    buf[1] = 0xCDCDCDCD;
-    int size = dtpRecv(desc, buf, 2 * 4);
-    printf("buf: %d, %d\n", buf[0], buf[1]);
-    assert(buf[0] == 1);
-    assert(buf[1] == 2);   
+    dtpRecv(desc, data, 2);
+    assert(data[0] == 2);
+    assert(data[1] == 3);
 
-    buf[0]++;
-    buf[1]++;
-
-    dtpSend(desc, buf, 2 * 4);
-
-    halSync(access, 0, NULL);
-
-    dtpClose(desc);
+    dtpClose(0);
 
 }
 
 
 int main(){
-    //halBoard *
-    HalBoard *board = halAllocBoard();
-    halBoardSetOption(board, HAL_BOARD_TYPE, HAL_MC12101);
-    halBoardSetOption(board, HAL_BOARD_NUMBER, 0);
-
-    if(halBoardOpen(board)){
-        std::cout << "Failed get board" << std::endl;
-        return 1;
-    }
-
-    HalCore core;
-    core.core = 0;
-    int error;
-    global_access = halGetAccess(board, &core, &error);
-
     test_singleBuffer_shouldDoneCorrect();
-    
-    halAccessClose(global_access);
-    halBoardClose(board);
-    halFreeBoard(board);
     
     return 0;
 }

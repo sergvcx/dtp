@@ -40,6 +40,7 @@ typedef struct {
 typedef enum {
     DTP_ST_IN_PROCESS,
     DTP_ST_DONE,
+    DTP_ST_WAIT_ACCEPT,
     DTP_ST_ERROR
 } DtpAsyncStatus;
 

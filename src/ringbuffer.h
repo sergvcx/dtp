@@ -6,7 +6,6 @@
 typedef struct DtpRingBuffer32 DtpRingBuffer32;
 
 #define DTP_BUFFER_SIZE 64
-#define DTP_BUFFER_COUNT 4
 
 #ifdef __NM__
 #define DTP_RING_BUFFER_SIZEOF_INT 16

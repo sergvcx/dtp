@@ -96,28 +96,41 @@ extern "C" {
         switch (data->index)
         {
         case 0:
-            if((int)dtp_buffer0_data_in < 0x100000)  rb_in_data  = dtp_buffer0_data_in + offset;
-            if((int)dtp_buffer0_data_out < 0x100000) rb_out_data = dtp_buffer0_data_out + offset;        
+            rb_in_data  = dtp_buffer0_data_in;
+            rb_out_data = dtp_buffer0_data_out;
+            if((int)dtp_buffer0_data_in < 0x100000)  rb_in_data  += offset;
+            if((int)dtp_buffer0_data_out < 0x100000) rb_out_data += offset;
             break;
         case 1:
-            if((int)dtp_buffer1_data_in < 0x100000)  rb_in_data  = dtp_buffer1_data_in + offset;
-            if((int)dtp_buffer1_data_out < 0x100000) rb_out_data = dtp_buffer1_data_out + offset;        
+            rb_in_data  = dtp_buffer1_data_in;
+            rb_out_data = dtp_buffer1_data_out;
+            if((int)dtp_buffer1_data_in < 0x100000)  rb_in_data  += offset;
+            if((int)dtp_buffer1_data_out < 0x100000) rb_out_data += offset;
             break;
         case 2:
-            if((int)dtp_buffer2_data_in < 0x100000)  rb_in_data  = dtp_buffer2_data_in + offset;
-            if((int)dtp_buffer2_data_out < 0x100000) rb_out_data = dtp_buffer2_data_out + offset;        
+            rb_in_data  = dtp_buffer2_data_in;
+            rb_out_data = dtp_buffer2_data_out;
+            if((int)dtp_buffer2_data_in < 0x100000)  rb_in_data  += offset;
+            if((int)dtp_buffer2_data_out < 0x100000) rb_out_data += offset;
             break;
         case 3:
-            if((int)dtp_buffer3_data_in < 0x100000)  rb_in_data  = dtp_buffer3_data_in + offset;
-            if((int)dtp_buffer3_data_out < 0x100000) rb_out_data = dtp_buffer3_data_out + offset;        
+            rb_in_data  = dtp_buffer3_data_in;
+            rb_out_data = dtp_buffer3_data_out;
+            if((int)dtp_buffer3_data_in < 0x100000)  rb_in_data  += offset;
+            if((int)dtp_buffer3_data_out < 0x100000) rb_out_data += offset;
             break;    
         default:
             return -1;
             break;
         }
-
-        data->rb_in =  dtpRingBufferAlloc(rb_in_data, DTP_BUFFER_SIZE);        
+        
+        data->rb_in =  dtpRingBufferAlloc(rb_in_data, DTP_BUFFER_SIZE); 
         data->rb_out = dtpRingBufferAlloc(rb_out_data, DTP_BUFFER_SIZE);
+        if(data->rb_in == 0 || data->rb_out == 0){
+            if(data->rb_in) free(data->rb_in);
+            if(data->rb_out) free(data->rb_out);
+            return DTP_ERROR;
+        }
 
         ringbuffers[2 * data->index] = data->rb_in;
         ringbuffers[2 * data->index + 1] = data->rb_out;
@@ -126,12 +139,6 @@ extern "C" {
         }
         if((int) ringbuffers[2 * data->index + 1] < 0x80000){
             ringbuffers[2 * data->index + 1] = (DtpRingBuffer32 *)((int*)ringbuffers[2 * data->index + 1] + offset);
-        }
-
-        if(data->rb_in == 0 || data->rb_out == 0){
-            if(data->rb_in) free(data->rb_in);
-            if(data->rb_out) free(data->rb_out);
-            return -1;
         }
 
 

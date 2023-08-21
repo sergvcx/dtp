@@ -4,12 +4,35 @@
 
 typedef int (*DtpBufferCopyFuncT)(void *user_data, void *buf, int remote_addr, int size32);
 
+#define DTP_BUFFER_COUNT 4
+
 #ifdef __cplusplus
 extern "C" {
 #endif //__cplusplus
+
+    /**
+     * @brief dtpOpenSharedBuffer
+     * 
+     * @param index Индекс буфера (0..(DTP_BUFFER_COUNT-1))
+     * @return int Дескриптор управления записью-чтением. Возвращается -1 при ошибке
+     * @details Используя данный режим, устройства общаются через буфер обмена, максимальный размер которого 
+     * равен 32 64-битным словам (или 256 байт). Поскольку данные пишутся напрямую процессором, в этом режиме запись и чтение блокируют
+     * выполнение программы до окончания обмена данных, а dtpGetStatus всегда возвращает DTP_IS_DONE
+     */
     int dtpOpenSharedBuffer(int index);
 
-    int dtpOpenRemoteSharedBuffer(int index, void *user_data, DtpBufferCopyFuncT readFunc, DtpBufferCopyFuncT writeFunc);
+    /**
+     * @brief dtpOpenRemoteSharedBuffer
+     * 
+     * @param index Индекс буфера (0..(DTP_BUFFER_COUNT-1))
+     * @param copy_data Пользовательская структура данных для копирования (например PL_Access)
+     * @param readFunc Указатель на функцию чтения
+     * @param writeFunc Указатель на функцию записи
+     * @return int Дескриптор управления записью-чтением. Возвращается -1 при ошибке
+     * @details Расширенная функция общения через буфер обмена. Так же как и в dtpOpenSharedBuffer, чтение и записью являются
+     * блокирующими операциями, а dtpGetStatus всегда возвращает DTP_IS_DONE
+     */
+    int dtpOpenRemoteSharedBuffer(int index, void *copy_data, DtpBufferCopyFuncT readFunc, DtpBufferCopyFuncT writeFunc);
 
 #ifdef __cplusplus
 }

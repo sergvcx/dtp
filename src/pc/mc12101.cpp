@@ -3,6 +3,94 @@
 #include "dtp/dtp.h"
 #include "stdio.h"
 #include "hal/ringbuffert.h"
+#include "dtp/buffer.h"
+
+#include "ringbuffer.h"
+
+
+struct PloadData{
+    PL_Access *access;
+    DtpBufferCopyFuncT readFunc; 
+    DtpBufferCopyFuncT writeFunc;
+    int index;
+    int desc;
+    DtpRingBuffer32 *rb;
+};
+
+int dtpPloadHostImplRecv(void *com_spec, DtpAsync *cmd){
+    PloadData *data = (PloadData *)com_spec;
+    int message[2];
+
+    while(1){
+        int error = dtpRecv(data->desc, message, 2);
+        if(error == DTP_OK) break;
+    }    
+    
+    data->readFunc(data->access, (void*)cmd->buf, message[0], cmd->nwords);
+
+    int status = DTP_ST_WAIT_ACCEPT;
+    data->writeFunc(data->access, (void*)&status, message[1], 1);
+
+    return DTP_OK;
+}
+
+int dtpPloadHostImplSend(void *com_spec, DtpAsync *cmd){
+    PloadData *data = (PloadData *)com_spec;
+    int message[2];
+    
+    while(1){
+        int error = dtpRecv(data->desc, message, 2);
+        if(error == DTP_OK) break;
+    }
+    
+    data->writeFunc(data->access, (void*)cmd->buf, message[0], cmd->nwords);
+
+    int status = DTP_ST_WAIT_ACCEPT;
+    data->writeFunc(data->access, (void*)&status, message[1], 1);
+
+    return DTP_OK;
+}
+
+
+int dtpPloadHostImplGetStatus(void *com_spec, DtpAsync *cmd){
+    return DTP_ST_DONE;
+}
+
+int dtpPloadHostImplConnect(void *com_spec){
+    PloadData *data = (PloadData *)com_spec;
+    
+    return dtpConnect(data->desc);
+}
+
+int dtpPloadHostImplDestroy(void *com_spec){
+    PloadData *data = (PloadData *)com_spec;
+    
+    dtpClose(data->desc);
+    delete data;
+
+    return DTP_OK;
+}
+
+
+int dtpOpenPloadHost(int index, PL_Access *access, DtpBufferCopyFuncT readFunc, DtpBufferCopyFuncT writeFunc){
+    PloadData *data = new PloadData();
+    if(data == 0) return -1;
+
+    data->index = index;
+    data->access = access;
+    data->readFunc = readFunc;
+    data->writeFunc = writeFunc;
+    data->desc = dtpOpenRemoteSharedBuffer(index, access, readFunc, writeFunc);
+
+    DtpImplementation impl;
+    impl.recv = dtpPloadHostImplRecv;
+    impl.send = dtpPloadHostImplSend;
+    impl.listen = 0;
+    impl.connect = dtpPloadHostImplConnect;
+    impl.destroy = dtpPloadHostImplDestroy;
+    impl.get_status = dtpPloadHostImplGetStatus;
+    return dtpOpenCustom(data, &impl);
+}
 
 const int DTP_MC12101_HOST_MESSAGE_SIZE = 2;
 struct Mc12101PloadFile{
@@ -150,6 +238,8 @@ static int halRbDestroy2(void *com_spec){
 // void halSleep(int msec){
 
 // }
+
+
 
 int dtpOpenPloadRingbuffer(PL_Access *access, uintptr_t hal_ring_buffer_remote_addr){
     HalRingBufferData<int, DTP_RING_BUFFER_SIZE_32> *ringbuffer_data = (HalRingBufferData<int, DTP_RING_BUFFER_SIZE_32> *)hal_ring_buffer_remote_addr;
