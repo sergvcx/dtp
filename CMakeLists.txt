@@ -34,8 +34,9 @@ list(APPEND sources
 	src/nm/mc12101.cpp
 	src/nm/ringbuffer.cpp
 	src/nm/semaphore.S
-	src/nm/dma.cpp
+	src/nm/dma-nm6407.cpp
 	src/nm/buffer.cpp
+	src/nm/spi.cpp
 	)
 set_source_files_properties(
 	src/nm/semaphore.S
@@ -50,6 +51,7 @@ list(APPEND sources
 	src/pc/buffer.cpp
 	)
 target_include_directories(dtp PRIVATE $ENV{MC12101}/include)
+target_compile_options(dtp PUBLIC -fpermissive)
 endif()
 
 if(UNIX)
@@ -62,6 +64,7 @@ target_include_directories(dtp
 		${CMAKE_CURRENT_LIST_DIR}/include
 	PRIVATE 
 		${CMAKE_CURRENT_LIST_DIR}/src
+		${CMAKE_CURRENT_LIST_DIR}/nmassert/include
 		$ENV{HAL}/include
 		$ENV{MC12101}/include
 		)

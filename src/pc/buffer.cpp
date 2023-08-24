@@ -1,7 +1,16 @@
 #include "dtp/buffer.h"
 #include "ringbuffer.h"
+#include "dtp/mc12101.h"
 
-const uintptr_t ringbuffer = 0xA8000 - 16;
+#include "stdio.h"
+
+const uintptr_t ringbuffer = 0xA8000 - 0x10;
+
+extern "C"{
+    int PL_ReadMemBlock(PL_Access *access, void *block, int address, int len);
+
+	int PL_WriteMemBlock(PL_Access *access, void *block, int address, int len);
+}
 
 struct RemoteSharedBufferData{
     void *user_data;
@@ -30,12 +39,11 @@ static int dtpBufferImplRecv(void *com_spec, DtpAsync *cmd){
                 size -= pop_size;
             }
         }
-        if(cmd->sigevent == DTP_EVENT_CALLBACK){
-            if(cmd->callback) cmd->callback(cmd->cb_data);
-        }
+        if(cmd->callback) cmd->callback(cmd->cb_data);
     } else {
         return DTP_ERROR;
     }    
+    return DTP_OK;
 }
 
 static int dtpBufferImplSend(void *com_spec, DtpAsync *cmd){
@@ -57,9 +65,7 @@ static int dtpBufferImplSend(void *com_spec, DtpAsync *cmd){
                 size -= push_size;
             }   
         }
-        if(cmd->sigevent == DTP_EVENT_CALLBACK){
-            if(cmd->callback) cmd->callback(cmd->cb_data);
-        }
+        if(cmd->callback) cmd->callback(cmd->cb_data);
     } else {
         return DTP_ERROR;
     }    
@@ -116,3 +122,38 @@ int dtpOpenRemoteSharedBuffer(int index, void *user_data, DtpBufferCopyFuncT rea
 
     return dtpOpenCustom(data, &impl);
 }
+
+    int dtpMc12101Connect(int desc, PL_Access *access, int index){
+        RemoteSharedBufferData *data = (RemoteSharedBufferData *)malloc(sizeof(RemoteSharedBufferData));
+        data->index = index;
+
+        uintptr_t rb = ringbuffer + 2 * data->index;
+        printf("ringbuffer %p\n", ringbuffer);
+        printf("rb %p\n", rb);
+        int rb_in_addr = 0;
+        int rb_out_addr = 0;
+        data->readFunc = (DtpBufferCopyFuncT)PL_ReadMemBlock;
+        data->writeFunc = (DtpBufferCopyFuncT)PL_WriteMemBlock;
+        data->user_data = access;
+        data->index = index;
+
+        int ok = 0;
+        ok = data->readFunc(data->user_data, &rb_out_addr, (int)rb, 1);
+        ok = data->readFunc(data->user_data, &rb_in_addr, (int)rb + 1, 1);
+        printf("rb %p\n", rb);
+        printf("rb_in_addr %p\n", rb_in_addr);
+        printf("rb_out_addr %p\n", rb_out_addr);
+        
+
+        data->rb_in = dtpRingBufferBind(data->user_data, rb_in_addr, data->readFunc, data->writeFunc);
+        data->rb_out = dtpRingBufferBind(data->user_data, rb_out_addr, data->readFunc, data->writeFunc);
+
+        DtpImplementation impl;
+        impl.recv = dtpBufferImplRecv;
+        impl.send = dtpBufferImplSend;
+        impl.get_status = dtpBufferImplGetStatus;
+        impl.destroy = dtpBufferImplDestroy;
+        impl.listen = 0;
+        impl.connect = dtpBufferImplConnect;
+        return dtpSetImplementation(desc, data, &impl);
+    }

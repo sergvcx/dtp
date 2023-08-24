@@ -78,7 +78,7 @@ int dtpOpenPloadTarget(int index){
         com_spec->status[i] = DTP_ST_DONE;
         com_spec->pool[i] = 0;
     }
-    com_spec->desc = dtpOpenSharedBuffer(index);
+    com_spec->desc = dtpConnectSharedBuffer(index);
 
     DtpImplementation impl;
     impl.recv = dtpOpenPloadTargetSendAddr;
@@ -177,7 +177,7 @@ static int mc12101Status(void *com_spec, DtpAsync *aio){
     if(data->status[ind] == DTP_ST_IN_PROCESS) return DTP_ST_IN_PROCESS;
 
     if(data->status[ind] == DTP_ST_DONE){
-        if(aio->sigevent == DTP_EVENT_CALLBACK){
+        if(aio->callback){
             aio->callback(aio->cb_data);
         }
         data->pool[ind] = 0;    

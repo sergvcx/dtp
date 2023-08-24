@@ -1,5 +1,6 @@
 #include "dtp/dtp.h"
 #include "dtp/buffer.h"
+#include "dtp/nm6407.h"
 #undef NDEBUG
 #include "nmassert.h"
 #include "stdio.h"
@@ -9,22 +10,19 @@
 #endif
 
 
-int main(){
-#ifdef __NM__
-    int desc = dtpOpenSharedBuffer(0);
-#else
-    int desc = 0;
-    PL_Board *board;
-    PL_Access *access;
-    PL_GetBoardDesc(0, &board);
-    PL_GetAccess(board, 0, &access);
 
-    //int desc = dtpOpenRemoteSharedBuffer(0, )
-#endif
+int main(){
+    //int desc = dtpConnectSharedBuffer(0);
+    int desc = dtpOpen(DTP_READ_WRITE);
+
+    //int desc = dtpOpenNm6407Spi();
+    //int desc = dtpOpenNm6407Link(2, DTP_NM6407_LINK_INPUT);
+
     int data[4];
 #ifdef LISTEN
     printf("listen\n");
-    int ok = dtpListen(desc);
+    int ok = dtpNm6407InitDefaultBuffer(desc, 0);
+    //int ok = dtpListen(desc);
     printf("ok %d\n", ok);
     data[0] = 1;
     data[1] = 2;
@@ -41,7 +39,7 @@ int main(){
     }
 #else
     printf("connect\n");
-    int ok = dtpConnect(desc);
+    int ok = dtpNm6407ConnectBuffer(desc, 0);
     printf("ok %d\n", ok);
 
     dtpRecv(desc, data, 3);

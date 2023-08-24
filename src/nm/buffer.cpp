@@ -5,7 +5,13 @@
 
 extern "C" int ncl_getProcessorNo(void);
 
-#define ADDR_TABLE_ADDR (0xA8000 - 16)
+const uintptr_t ADDR_TABLE_ADDR = (0xA8000 - 0x10);
+
+typedef struct {
+    DtpRingBuffer32 *rb_in;
+    DtpRingBuffer32 *rb_out;
+    int index;
+} RingBufferData;
 
 __attribute__ ((section (".data.dtp.buffer0"))) int dtp_buffer0_data_in [DTP_BUFFER_SIZE];
 __attribute__ ((section (".data.dtp.buffer0"))) int dtp_buffer0_data_out[DTP_BUFFER_SIZE];
@@ -15,14 +21,13 @@ __attribute__ ((section (".data.dtp.buffer2"))) int dtp_buffer2_data_in [DTP_BUF
 __attribute__ ((section (".data.dtp.buffer2"))) int dtp_buffer2_data_out[DTP_BUFFER_SIZE];
 __attribute__ ((section (".data.dtp.buffer3"))) int dtp_buffer3_data_in [DTP_BUFFER_SIZE];
 __attribute__ ((section (".data.dtp.buffer3"))) int dtp_buffer3_data_out[DTP_BUFFER_SIZE];
-static DtpRingBuffer32 **ringbuffers = (DtpRingBuffer32 **)(0xA8000 - 16);
+__attribute__ ((section (".data.dtp.ringbuffers"))) RingBufferData ringbuffers_static[DTP_BUFFER_COUNT];
+static DtpRingBuffer32 **ringbuffers_table = (DtpRingBuffer32 **)ADDR_TABLE_ADDR;
+
+void dtpRingBufferInit(DtpRingBuffer32 *ringbuffer, void *data, int capacity);
 
 
-typedef struct {
-    DtpRingBuffer32 *rb_in;
-    DtpRingBuffer32 *rb_out;
-    int index;
-} RingBufferData;
+
 
 extern "C" {
     int dtpRingBufferImplSend(void *com_spec, DtpAsync *cmd){
@@ -45,8 +50,8 @@ extern "C" {
                     size -= push_size;
                 }   
             }
-            if(cmd->sigevent == DTP_EVENT_CALLBACK){
-                if(cmd->callback) cmd->callback(cmd->cb_data);
+            if(cmd->callback){
+                cmd->callback(cmd->cb_data);
             }
         } else {
             return DTP_ERROR;
@@ -74,13 +79,89 @@ extern "C" {
                     size -= pop_size;
                 }
             }
-            if(cmd->sigevent == DTP_EVENT_CALLBACK){
-                if(cmd->callback) cmd->callback(cmd->cb_data);
+            if(cmd->callback){
+                cmd->callback(cmd->cb_data);
             }
         } else {
             return DTP_ERROR;
         }    
         return 0;
+    }
+
+
+    int dtpRingBufferImplGetStatus(void *com_spec, DtpAsync *cmd){
+        return DTP_ST_DONE;
+    }
+
+    int dtpNm6407InitBuffer(int desc, void *data_in, int capacity_in, void *data_out, int capacity_out, int bufferIndex){
+        RingBufferData *data = ringbuffers_static + bufferIndex;
+        data->rb_in = dtpRingBufferAlloc(data_in, capacity_in);
+        data->rb_out = dtpRingBufferAlloc(data_out, capacity_out);        
+
+        int offset = 0x40000;
+        if(ncl_getProcessorNo()){
+            offset += 0x40000;
+        }
+
+        printf("rb_in_addr %p\n", data->rb_in);
+        printf("rb_out_addr %p\n", data->rb_out);
+
+        // dtpRingBufferInit(data->rb_in, data_in, capacity_in);
+        // dtpRingBufferInit(data->rb_out, data_out, capacity_out);
+        data->index = bufferIndex;
+
+        DtpImplementation impl;
+        impl.recv = dtpRingBufferImplRecv;
+        impl.send = dtpRingBufferImplSend;
+        impl.get_status = dtpRingBufferImplGetStatus;
+        impl.destroy = 0;
+
+        
+        ringbuffers_table[2 * data->index] = data->rb_in;
+        ringbuffers_table[2 * data->index + 1] = data->rb_out;
+        
+        if((int) ringbuffers_table[2 * data->index] < 0x100000){
+            ringbuffers_table[2 * data->index] = (DtpRingBuffer32 *)(  (int*)ringbuffers_table[2 * data->index] + offset  );
+        }
+        if((int) ringbuffers_table[2 * data->index + 1] < 0x100000){
+            ringbuffers_table[2 * data->index + 1] = (DtpRingBuffer32 *)(  (int*)ringbuffers_table[2 * data->index + 1] + offset  );
+        }   
+        printf("rb table addr %d ,0x%x\n", (int)((int*)ringbuffers_table + 2 * data->index), (int)((int*)ringbuffers_table + 2 * data->index));
+        printf("rb_in_addr %p\n", ringbuffers_table[2 * data->index]);
+        printf("rb_out_addr %p\n", ringbuffers_table[2 * data->index + 1]);
+
+        return dtpSetImplementation(desc, data, &impl);
+    }
+
+    int dtpNm6407InitDefaultBuffer(int desc, int index){
+        switch(index){
+            case 0:
+            return dtpNm6407InitBuffer(desc, dtp_buffer0_data_in, DTP_BUFFER_SIZE, dtp_buffer0_data_out, DTP_BUFFER_SIZE, 0);
+            case 1:
+            return dtpNm6407InitBuffer(desc, dtp_buffer1_data_in, DTP_BUFFER_SIZE, dtp_buffer1_data_out, DTP_BUFFER_SIZE, 1);
+            case 2:
+            return dtpNm6407InitBuffer(desc, dtp_buffer2_data_in, DTP_BUFFER_SIZE, dtp_buffer2_data_out, DTP_BUFFER_SIZE, 2);
+            case 3:
+            return dtpNm6407InitBuffer(desc, dtp_buffer3_data_in, DTP_BUFFER_SIZE, dtp_buffer3_data_out, DTP_BUFFER_SIZE, 3);
+            default:
+            return -1;
+        }
+        
+    }
+
+    int dtpNm6407ConnectBuffer(int desc, int index){
+        RingBufferData *data = ringbuffers_static + index;
+
+        data->index = index;
+        data->rb_out = ringbuffers_table[2 * data->index];
+        data->rb_in  = ringbuffers_table[2 * data->index + 1];
+
+        DtpImplementation impl;
+        impl.recv = dtpRingBufferImplRecv;
+        impl.send = dtpRingBufferImplSend;
+        impl.get_status = dtpRingBufferImplGetStatus;
+        impl.destroy = 0;
+        return dtpSetImplementation(desc, data, &impl);
     }
 
     int dtpRingBufferImplListen(void *com_spec){
@@ -132,13 +213,13 @@ extern "C" {
             return DTP_ERROR;
         }
 
-        ringbuffers[2 * data->index] = data->rb_in;
-        ringbuffers[2 * data->index + 1] = data->rb_out;
-        if((int) ringbuffers[2 * data->index] < 0x100000){
-            ringbuffers[2 * data->index] = (DtpRingBuffer32 *)((int*)ringbuffers[2 * data->index] + offset);
+        ringbuffers_table[2 * data->index] = data->rb_in;
+        ringbuffers_table[2 * data->index + 1] = data->rb_out;
+        if((int) ringbuffers_table[2 * data->index] < 0x100000){
+            ringbuffers_table[2 * data->index] = (DtpRingBuffer32 *)((int*)ringbuffers_table[2 * data->index] + offset);
         }
-        if((int) ringbuffers[2 * data->index + 1] < 0x80000){
-            ringbuffers[2 * data->index + 1] = (DtpRingBuffer32 *)((int*)ringbuffers[2 * data->index + 1] + offset);
+        if((int) ringbuffers_table[2 * data->index + 1] < 0x80000){
+            ringbuffers_table[2 * data->index + 1] = (DtpRingBuffer32 *)((int*)ringbuffers_table[2 * data->index + 1] + offset);
         }
 
 
@@ -152,8 +233,8 @@ extern "C" {
 
     int dtpRingBufferImplConnect(void *com_spec){
         RingBufferData *data = (RingBufferData *)com_spec;
-        data->rb_in = ringbuffers[2 * data->index + 1];
-        data->rb_out = ringbuffers[2 * data->index];
+        data->rb_in = ringbuffers_table[2 * data->index + 1];
+        data->rb_out = ringbuffers_table[2 * data->index];
 
         int handshake = 0x12300123;
         dtpRingBufferPush(data->rb_out, &handshake, 1);
@@ -163,21 +244,18 @@ extern "C" {
         return 0;
     }
 
-    int dtpRingBufferImplGetStatus(void *com_spec, DtpAsync *cmd){
-        return DTP_ST_DONE;
-    }
 
     int dtpRingBufferImplDestroy(void *com_spec){
         RingBufferData *data = (RingBufferData *)com_spec;
-        ringbuffers[data->index * 2] = 0;
-        ringbuffers[data->index * 2 + 1] = 0;
+        ringbuffers_table[data->index * 2] = 0;
+        ringbuffers_table[data->index * 2 + 1] = 0;
         free(data->rb_in);
         free(data->rb_out);
         free(data);
         return 0;
     }
 
-    int dtpOpenSharedBuffer(int index){
+    int dtpConnectSharedBuffer(int index){
         RingBufferData *data = (RingBufferData *)malloc( sizeof (RingBufferData) );
         if(data == 0) return -1;
         data->index = index;

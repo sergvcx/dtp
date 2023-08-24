@@ -10,31 +10,44 @@ SECTIONS
 	.text : ALIGN(0x8)
 	{
 		*(.text);
-	} > Cx_IMU
+	} > EMI
 
 	.init : ALIGN(0x8)
 	{
 		*(.init);
-	} > Cx_IMU
+	} > EMI
 
 	.fini : ALIGN(0x8)
 	{
 		*(.fini);
-	} > Cx_IMU
+	} > EMI
 
 	.data : ALIGN(0x8)
 	{
 		*(.data);
-	} > Cx_IMU
+	} > EMI
 
 	.bss : ALIGN(0x8)
 	{
 		*(.bss);
-	} > Cx_IMU
+	} > EMI
 
 	.stack : ALIGN(0x8)
 	{
 		*(.stack);
+	} > Cx_IMU
+
+	.data.imu0 : ALIGN(0x8){
+		*(.data.imu0);
+	} > Cx_IMU
+	.data.imu1 : ALIGN(0x8){
+		*(.data.imu1);
+	} > Cx_IMU
+	.data.imu2 : ALIGN(0x8){
+		*(.data.imu2);
+	} > Cx_IMU
+	.data.imu3 : ALIGN(0x8){
+		*(.data.imu3);
 	} > Cx_IMU
 
 	.rpc_services : ALIGN(0x8)

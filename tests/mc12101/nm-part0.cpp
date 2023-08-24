@@ -1,5 +1,6 @@
 #include "dtp/dtp.h"
 #include "dtp/mc12101.h"
+#include "dtp/nm6407.h"
 #include "stdio.h"
 #undef NDEBUG
 #include "nmassert.h"
@@ -11,10 +12,14 @@ extern "C" void halSleep(int msec){
 }
 
 void test_singleBuffer_shouldDoneCorrect(){
-    int desc = dtpOpenPloadTarget(0);
+    //int desc = dtpOpenPloadTarget(0);
+    int desc = dtpOpen(DTP_READ_WRITE);
+    NMASSERT(desc > 0);
+    int ok = dtpNm6407InitDefaultBuffer(desc, 0);
+    printf("buffer inited\n");
+
 
     int data[2] = {0xCDCDCDCD,0xCDCDCDCD};
-    int ok = dtpListen(desc);
     NMASSERT(ok == DTP_OK);
 
     dtpRecv(desc, data, 2);

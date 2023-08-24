@@ -1,6 +1,7 @@
 #ifndef __DTP_BUFFER_H_INCLUDED__
 #define __DTP_BUFFER_H_INCLUDED__
 #include "stdint.h"
+#include "dtp/dtp.h"
 
 typedef int (*DtpBufferCopyFuncT)(void *user_data, void *buf, int remote_addr, int size32);
 
@@ -11,7 +12,7 @@ extern "C" {
 #endif //__cplusplus
 
     /**
-     * @brief dtpOpenSharedBuffer
+     * @brief dtpConnectSharedBuffer
      * 
      * @param index Индекс буфера (0..(DTP_BUFFER_COUNT-1))
      * @return int Дескриптор управления записью-чтением. Возвращается -1 при ошибке
@@ -19,7 +20,13 @@ extern "C" {
      * равен 32 64-битным словам (или 256 байт). Поскольку данные пишутся напрямую процессором, в этом режиме запись и чтение блокируют
      * выполнение программы до окончания обмена данных, а dtpGetStatus всегда возвращает DTP_IS_DONE
      */
-    int dtpOpenSharedBuffer(int index);
+    int 
+    DEPRECATED
+    dtpConnectSharedBuffer(int index);
+
+    // int dtpOpenUserSharedBuffer(int index, void *buf, int nwords);
+
+    // int dtpOpenSharedBuffer(int index);
 
     /**
      * @brief dtpOpenRemoteSharedBuffer
@@ -29,10 +36,14 @@ extern "C" {
      * @param readFunc Указатель на функцию чтения
      * @param writeFunc Указатель на функцию записи
      * @return int Дескриптор управления записью-чтением. Возвращается -1 при ошибке
-     * @details Расширенная функция общения через буфер обмена. Так же как и в dtpOpenSharedBuffer, чтение и записью являются
+     * @details Расширенная функция общения через буфер обмена. Так же как и в dtpConnectSharedBuffer, чтение и записью являются
      * блокирующими операциями, а dtpGetStatus всегда возвращает DTP_IS_DONE
      */
-    int dtpOpenRemoteSharedBuffer(int index, void *copy_data, DtpBufferCopyFuncT readFunc, DtpBufferCopyFuncT writeFunc);
+    int 
+    DEPRECATED
+    dtpOpenRemoteSharedBuffer(int index, void *copy_data, DtpBufferCopyFuncT readFunc, DtpBufferCopyFuncT writeFunc);
+
+    //int dtpGetImplementation()
 
 #ifdef __cplusplus
 }

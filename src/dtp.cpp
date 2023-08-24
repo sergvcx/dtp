@@ -2,6 +2,7 @@
 
 struct DtpObject{
     int fd;
+    int mode;
     int is_used;
     void *com_spec;
     DtpImplementation implementaion;
@@ -14,8 +15,37 @@ static int dtpIsInited = 0;
 
 extern "C"{
 
+    void dtpDefaultCallback(void *data){
+        int *status = (int *)data;
+        *status = DTP_ST_DONE;
+    }
+
     inline int getIndexFromDesc(int desc){
         return desc - 1;
+    }
+
+    int dtpOpen(int mode){
+        for(int i = 0; i < DTP_OPEN_MAX; i++){
+            if(dtp_objects[i].is_used == 0){
+                dtp_objects[i].fd = i + 1;
+                dtp_objects[i].is_used = 1;
+                dtp_objects[i].mode = mode;
+                return dtp_objects[i].fd;
+            }
+        }
+        return -1;
+    }
+
+    int dtpSetImplementation(int desc, void* com_spec, DtpImplementation *implementation){
+        int i = getIndexFromDesc(desc);
+        dtp_objects[i].com_spec = com_spec;
+        dtp_objects[i].implementaion.recv  = implementation->recv;
+        dtp_objects[i].implementaion.send = implementation->send;
+        dtp_objects[i].implementaion.get_status = implementation->get_status;                
+        dtp_objects[i].implementaion.destroy = implementation->destroy;
+        dtp_objects[i].implementaion.listen = implementation->listen;
+        dtp_objects[i].implementaion.connect = implementation->connect;        
+        return DTP_OK;
     }
 
 
@@ -25,21 +55,10 @@ extern "C"{
     }
 
     int dtpOpenCustom(void *com_spec, DtpImplementation *implementation){
-        for(int i = 0; i < DTP_OPEN_MAX; i++){
-            if(dtp_objects[i].is_used == 0){
-                dtp_objects[i].fd = i + 1;
-                dtp_objects[i].com_spec = com_spec;
-                dtp_objects[i].implementaion.recv  = implementation->recv;
-                dtp_objects[i].implementaion.send = implementation->send;
-                dtp_objects[i].implementaion.get_status = implementation->get_status;                
-                dtp_objects[i].implementaion.destroy = implementation->destroy;
-                dtp_objects[i].implementaion.listen = implementation->listen;
-                dtp_objects[i].implementaion.connect = implementation->connect;
-                dtp_objects[i].is_used = 1;
-                return dtp_objects[i].fd;
-            }
-        }
-        return -1;
+        int desc = dtpOpen(DTP_READ_WRITE);
+        if(desc < 0) return -1;
+        int ok = dtpSetImplementation(desc, com_spec, implementation);
+        return desc;        
     }
 
     int dtpOpenDesc(int desc){
@@ -49,9 +68,10 @@ extern "C"{
 
     int dtpSend(int desc, const void *data, size_t size){
         DtpAsync task;
+        int status = DTP_ST_IN_PROCESS;
         task.buf = (volatile void*)data;
         task.nwords = size;
-        task.sigevent = DTP_EVENT_NONE;
+        //task.sigevent = DTP_EVENT_NONE;
         task.callback = 0;
         task.type = DTP_TASK_1D;
         int error = dtpAsyncSend(desc, &task);
@@ -61,9 +81,10 @@ extern "C"{
 
     int dtpRecv(int desc, void *data, size_t size){        
         DtpAsync task;
+        int status = DTP_ST_IN_PROCESS;
         task.buf = (volatile void*)data;
         task.nwords = size;
-        task.sigevent = DTP_EVENT_NONE;
+        //task.sigevent = DTP_EVENT_NONE;
         task.callback = 0;
         task.type = DTP_TASK_1D;
         int error = dtpAsyncRecv(desc, &task);
@@ -73,9 +94,10 @@ extern "C"{
 
 	int dtpSendM(int desc, const void *data, size_t size, int width, int stride){
         DtpAsync task;
+        int status = DTP_ST_IN_PROCESS;
         task.buf = (volatile void*)data;
         task.nwords = size;
-        task.sigevent = DTP_EVENT_NONE;
+        //task.sigevent = DTP_EVENT_NONE;
         task.stride = stride;
         task.width = width;
         task.callback = 0;
@@ -87,8 +109,9 @@ extern "C"{
 
     int dtpRecvM(int desc, void *data, size_t size, int width, int stride){
         DtpAsync task;
+        int status = DTP_ST_IN_PROCESS;
         task.buf = (volatile void*)data;
-        task.sigevent = DTP_EVENT_NONE;
+        //task.sigevent = DTP_EVENT_NONE;
         task.nwords = size;
         task.stride = stride;
         task.width = width;
@@ -121,12 +144,20 @@ extern "C"{
         }
     }
 
+    int dtpGetMode(int desc){
+        int no = getIndexFromDesc(desc);
+        return dtp_objects[no].mode;
+    }
+
 
     int dtpClose(int desc){
         int no = getIndexFromDesc(desc);
         DtpImplementation *impl = &dtp_objects[no].implementaion;
         void* com_spec = dtp_objects[no].com_spec;
-        int error = impl->destroy(com_spec);
+        int error = 0;
+        if(impl->destroy){
+            error = impl->destroy(com_spec);
+        }        
         dtp_objects[no].is_used = 0;
         return error;
     }
@@ -157,7 +188,7 @@ extern "C"{
         int error = 0;
         while(1){
             error = dtpAsyncStatus(desc, task);
-            if(error == DTP_ST_ERROR) return DTP_ST_ERROR;
+            if(error == DTP_ST_ERROR) return -1;
             if(error == DTP_ST_DONE) return 0;
         };
     }

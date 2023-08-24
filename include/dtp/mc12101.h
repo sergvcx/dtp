@@ -7,6 +7,8 @@
 
 typedef void* (*DtpMemCopyFuncT)(const void *src, void *dst, unsigned int size32);
 
+typedef struct PL_Access PL_Access;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -21,13 +23,21 @@ extern "C" {
      * - dtpSend возвращает DTP_OK при успешной загрузке команды в буфер и DTP_AGAIN в случае, когда нет места в буфере
      * - dtpRecv возвращают DTP_OK при успешной загрузке команды в буфер и DTP_AGAIN в случае, когда нет места в буфере
      */
-    int dtpOpenPloadTarget(int index);
+    int 
+    DEPRECATED
+    dtpOpenPloadTarget(int index);
+
+    int dtpMc12101Connect(int desc, PL_Access *access, int index);
 
     //int dtpOpenPloadFile(int index, void *copy_data, DtpBufferCopyFuncT readFunc, DtpBufferCopyFuncT writeFunc);
 
-    int dtpOpenRingbuffer(void *hal_ring_buffer, DtpMemCopyFuncT push_func, DtpMemCopyFuncT pop_func);
+    int 
+    DEPRECATED
+    dtpOpenRingbuffer(void *hal_ring_buffer, DtpMemCopyFuncT push_func, DtpMemCopyFuncT pop_func);
 
-    int dtpOpenRingbufferDefault(void *hal_ring_buffer);
+    int 
+    DEPRECATED
+    dtpOpenRingbufferDefault(void *hal_ring_buffer);
 
 #ifdef __cplusplus
 }

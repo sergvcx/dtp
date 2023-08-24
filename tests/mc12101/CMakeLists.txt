@@ -28,6 +28,7 @@ target_include_directories(host-test
     ${CMAKE_CURRENT_LIST_DIR}/../../include
     PRIVATE
     $ENV{HAL}/include
+    ${CMAKE_CURRENT_LIST_DIR}/../../nmassert/include
 )
 
 #add_test()

@@ -29,13 +29,21 @@ extern "C" {
      * - dtpSend возвращает DTP_OK при успешной записи данных на target
      * - dtpRecv возвращают DTP_OK при успешном чтении данных и DTP_AGAIN при пустом буфере команд
      */
-    int dtpOpenPloadHost(int index, PL_Access *access, DtpBufferCopyFuncT readFunc, DtpBufferCopyFuncT writeFunc);
+    int 
+    DEPRECATED
+    dtpOpenPloadHost(int index, PL_Access *access, DtpBufferCopyFuncT readFunc, DtpBufferCopyFuncT writeFunc);
 
-    int dtpOpenPloadFileHost(PL_Access *access, const char *filename);
+    int 
+    DEPRECATED
+    dtpOpenPloadFileHost(PL_Access *access, const char *filename);
 
-    int dtpOpenPloadRingbuffer(PL_Access *access, uintptr_t hal_ring_buffer_remote_addr);
+    int 
+    DEPRECATED
+    dtpOpenPloadRingbuffer(PL_Access *access, uintptr_t hal_ring_buffer_remote_addr);
 
-    int dtpOpenMc12101Ringbuffer(int boardIndex, int coreIndex, uintptr_t hal_ring_buffer_remote_addr);
+    int 
+    DEPRECATED
+    dtpOpenMc12101Ringbuffer(int boardIndex, int coreIndex, uintptr_t hal_ring_buffer_remote_addr);
 
 #ifdef __cplusplus
 }

@@ -37,6 +37,19 @@ SECTIONS
 		*(.stack);
 	} > Cx_IMU
 
+	.data.imu0 : ALIGN(0x8){
+		*(.data.imu0);
+	} > Cx_IMU
+	.data.imu1 : ALIGN(0x8){
+		*(.data.imu1);
+	} > Cx_IMU
+	.data.imu2 : ALIGN(0x8){
+		*(.data.imu2);
+	} > Cx_IMU
+	.data.imu3 : ALIGN(0x8){
+		*(.data.imu3);
+	} > Cx_IMU
+
 	.rpc_services : ALIGN(0x8)
 	{
 		KEEP(*(.rpc_services));
