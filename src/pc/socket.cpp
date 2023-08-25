@@ -136,6 +136,51 @@ static int socketConnect(void *com_spec){
 }
 
 extern "C"{
+
+    int dtpConnectSocket(int desc, const char *ipAddr, int port){
+        SocketData *sock = (SocketData*)malloc(sizeof(SocketData));
+        if(sock == 0)return -1;
+        sock->port = port;
+    #ifdef _WIN32
+        WSADATA wsaData = {0};
+        int iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
+    #endif
+
+
+
+        DtpImplementation impl;
+        impl.recv = socketRecv;
+        impl.send = socketSend;
+        impl.destroy = socketDestroy;
+        impl.get_status = socketStatus;
+        impl.connect = socketConnect;
+        impl.listen = socketListen;
+        socketConnect(sock);
+        return dtpSetImplementation(desc, sock, &impl);        
+    }
+    
+    int dtpListenSocket(int desc, int port){
+        SocketData *sock = (SocketData*)malloc(sizeof(SocketData));
+        if(sock == 0)return -1;
+        sock->port = port;
+    #ifdef _WIN32
+        WSADATA wsaData = {0};
+        int iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
+    #endif
+
+
+
+        DtpImplementation impl;
+        impl.recv = socketRecv;
+        impl.send = socketSend;
+        impl.destroy = socketDestroy;
+        impl.get_status = socketStatus;
+        impl.connect = socketConnect;
+        impl.listen = socketListen;
+        socketListen(sock);
+        return dtpSetImplementation(desc, sock, &impl);
+    }
+
     int dtpOpenSocket(const char *ipAddr, int port){
         SocketData *sock = (SocketData*)malloc(sizeof(SocketData));
         if(sock == 0)return -1;

@@ -9,7 +9,7 @@ typedef int(*get_proc_no_func_t)();
 
 
 // Константы смещения регистров передающего канала относительно базового адреса
-const static int TR_MAIN_COUNTER    = 0;
+const static int TR_MAIN_COUNTER    = 0x0;
 const static int TR_ADDRESS         = 0x2;
 const static int TR_BIAS            = 0x4;
 const static int TR_ROW_COUNTER     = 0x6;
@@ -223,7 +223,6 @@ int dtpNm6407Link(int desc, int port){
     int mask = 1 << 24;
     mask <<= port;
     mask <<= direction;
-    EnableInterrupts_PSWR(I_MASK_INM);
     EnableInterrupts_IMR_Low(mask);
     switch (port)
     {

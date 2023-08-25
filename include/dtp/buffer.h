@@ -2,10 +2,11 @@
 #define __DTP_BUFFER_H_INCLUDED__
 #include "stdint.h"
 #include "dtp/dtp.h"
+#include "dtp/nm6407.h"
 
 typedef int (*DtpBufferCopyFuncT)(void *user_data, void *buf, int remote_addr, int size32);
 
-#define DTP_BUFFER_COUNT 4
+
 
 #ifdef __cplusplus
 extern "C" {

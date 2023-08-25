@@ -3,7 +3,8 @@
 #include "stdio.h"
 
 int main(){
-    int desc = dtpOpenSocket("localhost", 23436);
+    int desc = dtpOpen(DTP_READ_WRITE);
+    dtpListenSocket(desc, 23436);
 
     int ok = dtpConnect(desc);
     printf("ok %d\n", ok);
