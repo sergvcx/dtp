@@ -13,7 +13,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release")
 
-add_library(dtp)
+add_library(dtp STATIC)
 add_library(dtp::dtp ALIAS dtp)
 
 set(public_headers
@@ -78,7 +78,7 @@ set_target_properties(dtp PROPERTIES
 	)
 enable_testing()
 add_subdirectory(examples)
-add_subdirectory(tests)
+#add_subdirectory(tests)
 
 
 

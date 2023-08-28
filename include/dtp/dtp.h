@@ -9,6 +9,8 @@ typedef void (*DtpNotifyFunctionT)(void *event_data);
 
 #ifdef __GNUC__
 #define DEPRECATED __attribute__ ((deprecated))
+#else 
+#define DEPRECATED 
 #endif
 
 

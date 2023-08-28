@@ -30,7 +30,7 @@ add_executable(dtp-buffer-example pc/pc-main.cpp)
 
 target_link_libraries(dtp-buffer-example 
     PUBLIC 
-        dtp-x64d
+        dtp-x64$<$<CONFIG:Debug>:d>
         mc12101load   
     )
 target_include_directories(dtp-buffer-example PUBLIC 

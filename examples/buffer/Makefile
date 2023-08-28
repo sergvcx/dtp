@@ -4,7 +4,7 @@
 default: build-pc build-nm0
 
 configure-pc:
-	cmake -B build
+	cmake -B build -A x64
 
 build-pc: configure-pc
 	cmake --build build

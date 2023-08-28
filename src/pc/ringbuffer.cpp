@@ -47,6 +47,7 @@ DtpRingBuffer32 *dtpRingBufferBind(void *user_data, uintptr_t remoteRingBuffer, 
     DtpRingBuffer32 *result = (DtpRingBuffer32*)malloc(sizeof(DtpRingBuffer32));
     if(result == 0) return 0;
     result->data_addr = 0;
+	result->capacity = 0;
     result->readFunc = readFunc;
     result->writeFunc = writeFunc;
     result->user_data = user_data;
