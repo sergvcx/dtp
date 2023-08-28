@@ -138,8 +138,6 @@ int dtpOpenRemoteSharedBuffer(int index, void *user_data, DtpBufferCopyFuncT rea
         data->index = index;
 
         uintptr_t rb = ringbuffer + 2 * data->index;
-        printf("ringbuffer %p\n", ringbuffer);
-        printf("rb %p\n", rb);
         int rb_in_addr = 0;
         int rb_out_addr = 0;
         data->readFunc = (DtpBufferCopyFuncT)PL_ReadMemBlock;
@@ -150,9 +148,6 @@ int dtpOpenRemoteSharedBuffer(int index, void *user_data, DtpBufferCopyFuncT rea
         int ok = 0;
         ok = data->readFunc(data->user_data, &rb_out_addr, (int)rb, 1);
         ok = data->readFunc(data->user_data, &rb_in_addr, (int)rb + 1, 1);
-        printf("rb %p\n", rb);
-        printf("rb_in_addr %p\n", rb_in_addr);
-        printf("rb_out_addr %p\n", rb_out_addr);
         
 
         data->rb_in = dtpRingBufferBind(data->user_data, rb_in_addr, data->readFunc, data->writeFunc);

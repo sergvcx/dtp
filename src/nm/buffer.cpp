@@ -113,9 +113,6 @@ extern "C" {
             offset += 0x40000;
         }
 
-        printf("rb_in_addr %p\n", data->rb_in);
-        printf("rb_out_addr %p\n", data->rb_out);
-
         // dtpRingBufferInit(data->rb_in, data_in, capacity_in);
         // dtpRingBufferInit(data->rb_out, data_out, capacity_out);
         data->index = bufferIndex;
@@ -135,10 +132,7 @@ extern "C" {
         }
         if((int) ringbuffers_table[2 * data->index + 1] < 0x100000){
             ringbuffers_table[2 * data->index + 1] = (DtpRingBuffer32 *)(  (int*)ringbuffers_table[2 * data->index + 1] + offset  );
-        }   
-        printf("rb table addr %d ,0x%x\n", (int)((int*)ringbuffers_table + 2 * data->index), (int)((int*)ringbuffers_table + 2 * data->index));
-        printf("rb_in_addr %p\n", ringbuffers_table[2 * data->index]);
-        printf("rb_out_addr %p\n", ringbuffers_table[2 * data->index + 1]);
+        }           
 
         return dtpBind(desc, data, &impl);
     }
