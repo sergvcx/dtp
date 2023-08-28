@@ -82,9 +82,7 @@ int dtpOpenPloadTarget(int index){
 
     DtpImplementation impl;
     impl.recv = dtpOpenPloadTargetSendAddr;
-    impl.send = dtpOpenPloadTargetSendAddr;
-    impl.listen = dtpOpenPloadTargetImplListen;
-    impl.connect = 0;
+    impl.send = dtpOpenPloadTargetSendAddr;    
     impl.get_status = dtpOpenPloadTargetGetStatus;
     impl.destroy = dtpOpenPloadTargetImplDestroy;
     return dtpOpenCustom(com_spec, &impl);
@@ -217,10 +215,6 @@ extern "C"{
         impl.recv = mc12101Recv;
         impl.get_status = mc12101Status;
         impl.destroy = mc12101Destroy;
-        impl.connect = 0;
-        impl.listen = 0;
-
-        
         return dtpOpenCustom(com_spec, &impl);  
     }
 
@@ -287,8 +281,6 @@ int dtpOpenRingbuffer(void *hal_ring_buffer, DtpMemCopyFuncT push_func, DtpMemCo
     	printf("data     :%x\n",connector->data);
 
         DtpImplementation impl;
-    	impl.connect = 0;
-        impl.listen = 0;
     	impl.recv=halRbRecv;
     	impl.send=halRbSend;
     	impl.get_status=halRbStatus;

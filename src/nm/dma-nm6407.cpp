@@ -29,7 +29,7 @@ const static int RC_INTERRUPT_MASK  = 0x1C;
 const static int RC_STATE           = 0x1E;
 
 struct DmaInfo{
-    //nm_sem_t *dma_sem;
+    nm_sem_t *dma_sem;
     int *base;
     int is_used = 0;
     int is_packed = 0;
@@ -193,9 +193,7 @@ int dtpNm6407Dma(int desc, int mask){
     impl.send = dmaImplPacketSend;
     impl.get_status = dmaImplGetStatus;
     impl.destroy = dmaImplDestroy;
-    impl.connect = 0;
-    impl.listen = 0;
-    return dtpSetImplementation(desc, info, &impl);
+    return dtpBind(desc, info, &impl);
 }
 
 int dtpNm6407Link(int desc, int port){
@@ -257,9 +255,7 @@ int dtpNm6407Link(int desc, int port){
     impl.send = linkImplPacketSend;
     impl.get_status = linkImplGetStatus;
     impl.destroy = linkImplDestroy;
-    impl.connect = 0;
-    impl.listen = 0;
-    return dtpSetImplementation(desc, info, &impl);    
+    return dtpBind(desc, info, &impl);    
 }
 
 

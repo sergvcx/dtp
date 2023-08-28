@@ -75,7 +75,7 @@ static int dtpSpiImplDestroy(void *com_spec){
 }
 
 extern "C"{
-    int dtpOpenNm6407Spi(){
+    int dtpOpenNm6407Spi(int desc){
         DtpSpiData *com_spec = (DtpSpiData *) malloc( sizeof(DtpSpiData) );
         if(com_spec == 0) return -1;
 
@@ -91,9 +91,7 @@ extern "C"{
         impl.recv = dtpSpiImplRecv;
         impl.send = dtpSpiImplSend;
         impl.get_status = dtpSpiImplGetStatus;
-        impl.destroy = dtpSpiImplDestroy;
-        impl.listen = 0;
-        impl.connect = 0; 
-        return dtpOpenCustom(com_spec, &impl);
+        impl.destroy = dtpSpiImplDestroy;  
+        return dtpBind(desc, com_spec, &impl);;
     }
 }

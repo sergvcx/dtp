@@ -54,8 +54,6 @@ typedef struct {
     int (*recv)(void *com_spec, DtpAsync *task);
     int (*get_status)(void *com_spec, DtpAsync *task);    
     int (*destroy)(void *com_spec);
-    int (*listen)(void *com_spec);
-    int (*connect)(void *com_spec);
 } DtpImplementation;
 
 // typedef enum{
@@ -104,7 +102,7 @@ extern "C" {
      * @param implementation 
      * @return int Возвращает DTP_OK при успехе и DTP_ERROR при возникновении ошибки
      */
-    int dtpSetImplementation(int desc, void* com_spec, DtpImplementation *implementation);
+    int dtpBind(int desc, void* com_spec, DtpImplementation *implementation);
 
     //int dtpSetDestroyComSpecFunc(int desc, );
 

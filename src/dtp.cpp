@@ -36,15 +36,13 @@ extern "C"{
         return -1;
     }
 
-    int dtpSetImplementation(int desc, void* com_spec, DtpImplementation *implementation){
+    int dtpBind(int desc, void* com_spec, DtpImplementation *implementation){
         int i = getIndexFromDesc(desc);
         dtp_objects[i].com_spec = com_spec;
         dtp_objects[i].implementaion.recv  = implementation->recv;
         dtp_objects[i].implementaion.send = implementation->send;
         dtp_objects[i].implementaion.get_status = implementation->get_status;                
-        dtp_objects[i].implementaion.destroy = implementation->destroy;
-        dtp_objects[i].implementaion.listen = implementation->listen;
-        dtp_objects[i].implementaion.connect = implementation->connect;        
+        dtp_objects[i].implementaion.destroy = implementation->destroy;        
         return DTP_OK;
     }
 
@@ -57,7 +55,7 @@ extern "C"{
     int dtpOpenCustom(void *com_spec, DtpImplementation *implementation){
         int desc = dtpOpen(DTP_READ_WRITE);
         if(desc < 0) return -1;
-        int ok = dtpSetImplementation(desc, com_spec, implementation);
+        int ok = dtpBind(desc, com_spec, implementation);
         return desc;        
     }
 
@@ -126,22 +124,14 @@ extern "C"{
         int no = getIndexFromDesc(desc);
         DtpImplementation *impl = &dtp_objects[no].implementaion;
         void* com_spec = dtp_objects[no].com_spec;
-        if(impl->connect){
-            return impl->connect(com_spec);
-        }else{
-            return DTP_ERROR;
-        }
+        return DTP_ERROR;
     }
 
     int dtpListen(int desc){
         int no = getIndexFromDesc(desc);
         DtpImplementation *impl = &dtp_objects[no].implementaion;
         void* com_spec = dtp_objects[no].com_spec;
-        if(impl->listen){
-            return impl->listen(com_spec);
-        }else{
-            return DTP_ERROR;
-        }
+        return DTP_ERROR;
     }
 
     int dtpGetMode(int desc){

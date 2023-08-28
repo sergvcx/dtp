@@ -117,9 +117,6 @@ int dtpOpenRemoteSharedBuffer(int index, void *user_data, DtpBufferCopyFuncT rea
     impl.send = dtpBufferImplSend;
     impl.get_status = dtpBufferImplGetStatus;
     impl.destroy = dtpBufferImplDestroy;
-    impl.listen = 0;
-    impl.connect = dtpBufferImplConnect;
-
     return dtpOpenCustom(data, &impl);
 }
 
@@ -152,8 +149,6 @@ int dtpOpenRemoteSharedBuffer(int index, void *user_data, DtpBufferCopyFuncT rea
         impl.recv = dtpBufferImplRecv;
         impl.send = dtpBufferImplSend;
         impl.get_status = dtpBufferImplGetStatus;
-        impl.destroy = dtpBufferImplDestroy;
-        impl.listen = 0;
-        impl.connect = dtpBufferImplConnect;
-        return dtpSetImplementation(desc, data, &impl);
+        impl.destroy = dtpBufferImplDestroy;        
+        return dtpBind(desc, data, &impl);
     }

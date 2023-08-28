@@ -153,12 +153,10 @@ extern "C"{
         impl.send = socketSend;
         impl.destroy = socketDestroy;
         impl.get_status = socketStatus;
-        impl.connect = socketConnect;
-        impl.listen = socketListen;
         socketConnect(sock);
-        return dtpSetImplementation(desc, sock, &impl);        
+        return dtpBind(desc, sock, &impl);        
     }
-    
+
     int dtpListenSocket(int desc, int port){
         SocketData *sock = (SocketData*)malloc(sizeof(SocketData));
         if(sock == 0)return -1;
@@ -174,11 +172,9 @@ extern "C"{
         impl.recv = socketRecv;
         impl.send = socketSend;
         impl.destroy = socketDestroy;
-        impl.get_status = socketStatus;
-        impl.connect = socketConnect;
-        impl.listen = socketListen;
+        impl.get_status = socketStatus;        
         socketListen(sock);
-        return dtpSetImplementation(desc, sock, &impl);
+        return dtpBind(desc, sock, &impl);
     }
 
     int dtpOpenSocket(const char *ipAddr, int port){
@@ -197,8 +193,6 @@ extern "C"{
         impl.send = socketSend;
         impl.destroy = socketDestroy;
         impl.get_status = socketStatus;
-        impl.connect = socketConnect;
-        impl.listen = socketListen;
         return dtpOpenCustom(sock, &impl);
     }
 }

@@ -6,10 +6,6 @@ int main(){
     int desc = dtpOpen(DTP_READ_WRITE);
     dtpListenSocket(desc, 23436);
 
-    int ok = dtpConnect(desc);
-    printf("ok %d\n", ok);
-    if(ok < 0) return 0;
-
     int data[2] = {1, 2};
     dtpSend(desc, data, 2);
 

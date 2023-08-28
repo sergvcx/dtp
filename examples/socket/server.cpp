@@ -4,11 +4,7 @@
 
 int main(){
     int desc = dtpOpen(DTP_READ_WRITE);
-    dtpConnectSocket(desc, "localhost", 23436);
-
-    int ok = dtpListen(desc);
-    printf("ok %d\n", ok);
-    if(ok < 0) return 0;
+    dtpListenSocket(desc, 23436);
 
     int data[2] = {0, 1};
     dtpRecv(desc, data, 2);

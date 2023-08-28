@@ -130,7 +130,7 @@ extern "C" {
         printf("rb_in_addr %p\n", ringbuffers_table[2 * data->index]);
         printf("rb_out_addr %p\n", ringbuffers_table[2 * data->index + 1]);
 
-        return dtpSetImplementation(desc, data, &impl);
+        return dtpBind(desc, data, &impl);
     }
 
     int dtpNm6407InitDefaultBuffer(int desc, int index){
@@ -161,7 +161,7 @@ extern "C" {
         impl.send = dtpRingBufferImplSend;
         impl.get_status = dtpRingBufferImplGetStatus;
         impl.destroy = 0;
-        return dtpSetImplementation(desc, data, &impl);
+        return dtpBind(desc, data, &impl);
     }
 
     int dtpRingBufferImplListen(void *com_spec){
@@ -262,9 +262,7 @@ extern "C" {
 
         DtpImplementation impl;
         impl.recv = dtpRingBufferImplRecv;
-        impl.send = dtpRingBufferImplSend;
-        impl.listen = dtpRingBufferImplListen;
-        impl.connect = dtpRingBufferImplConnect;
+        impl.send = dtpRingBufferImplSend;        
         impl.get_status = dtpRingBufferImplGetStatus;
         impl.destroy = dtpRingBufferImplDestroy;
         return dtpOpenCustom(data, &impl);
