@@ -15,5 +15,5 @@ build-nm0:
 	-I../../include \
 	-ldtp-nm
 
-run-nm0: build-nm0
+run0: build-nm0
 	mc12101run -p -a0 -b0 main0.abs

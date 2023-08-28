@@ -29,7 +29,7 @@ const static int RC_INTERRUPT_MASK  = 0x1C;
 const static int RC_STATE           = 0x1E;
 
 struct DmaInfo{
-    nm_sem_t *dma_sem;
+    //nm_sem_t *dma_sem;
     int *base;
     int is_used = 0;
     int is_packed = 0;

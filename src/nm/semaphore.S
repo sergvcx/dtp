@@ -1,12 +1,12 @@
 
-.global _nm_sem_init
-.global _nm_sem_wait
-.global _nm_sem_post
-.global _nm_sem_getvalue
+.global _dtp_sem_init
+.global _dtp_sem_wait
+.global _dtp_sem_post
+.global _dtp_sem_getvalue
 
 .section .text.dtp,"ax",@progbits
 //void nm_sem_init(nm_sem_t *sem, int value);
-_nm_sem_init:
+_dtp_sem_init:
     ar5 = [ar7 - 3];
     gr7 = [ar7 - 4];
     delayed return;
@@ -14,7 +14,7 @@ _nm_sem_init:
         gr7 = false;
         nul;
 //void nm_sem_wait(nm_sem_t *sem);
-_nm_sem_wait:
+_dtp_sem_wait:
     ar5 = [ar7 - 3];
 wait_loop:
     gr7 = [ar5];
@@ -28,7 +28,7 @@ wait_loop:
         gr7 = false;
 
 //void nm_sem_getvalue(nm_sem_t *sem, int *value);
-_nm_sem_getvalue:
+_dtp_sem_getvalue:
     ar5 = [ar7 - 3];
     gr7 = [ar5];
     ar5 = [ar7 - 4];
@@ -38,9 +38,9 @@ _nm_sem_getvalue:
         gr7 = false;
         nul;
 //void nm_sem_try_wait(nm_sem_t *sem);
-//_nm_sem_try_wait:
+//_dtp_sem_try_wait:
 //void nm_sem_post(nm_sem_t *sem);
-_nm_sem_post:
+_dtp_sem_post:
     ar5 = [ar7 - 3];    
     delayed return;
         gr7 = [ar5];

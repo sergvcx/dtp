@@ -46,13 +46,13 @@ DtpRingBuffer32 *dtpRingBufferAlloc(void *data, int capacity){
 void dtpRingBufferInit(DtpRingBuffer32 *ringbuffer, void *data, int capacity){
     ringbuffer->data = (int*)data;
     ringbuffer->capacity = capacity;
-    nm_sem_init(&ringbuffer->read_semaphore, 0);
+    dtp_sem_init(&ringbuffer->read_semaphore, 0);
     //nm_sem_init(&rb->write_semaphore, capacity);
-    nm_sem_init(&ringbuffer->write_semaphore, 1);
+    dtp_sem_init(&ringbuffer->write_semaphore, 1);
     int value_read;
     int value_write;
-    nm_sem_getvalue(&ringbuffer->write_semaphore, &value_write);
-    nm_sem_getvalue(&ringbuffer->read_semaphore, &value_read);    
+    dtp_sem_getvalue(&ringbuffer->write_semaphore, &value_write);
+    dtp_sem_getvalue(&ringbuffer->read_semaphore, &value_read);    
     ringbuffer->head = 0;
     ringbuffer->tail = 0;
     ringbuffer->is_inited = 1;
@@ -133,14 +133,14 @@ void dtpRingBufferPop(DtpRingBuffer32 *ring_buffer, void *data, int count){
 
 int dtpRingBufferIsEmpty(DtpRingBuffer32 *ring_buffer){
     int value;
-    nm_sem_getvalue(&ring_buffer->read_semaphore, &value);
+    dtp_sem_getvalue(&ring_buffer->read_semaphore, &value);
     return value <= 0;
 }
 
 
 int dtpRingBufferIsFull(DtpRingBuffer32 *ring_buffer){    
     int value;
-    nm_sem_getvalue(&ring_buffer->write_semaphore, &value);
+    dtp_sem_getvalue(&ring_buffer->write_semaphore, &value);
     return value <= 0;
 }
 
@@ -151,20 +151,20 @@ int dtpRingBufferAvailable(DtpRingBuffer32 *ring_buffer){
 
 
 void dtpRingBufferCapturedRead(DtpRingBuffer32 *ring_buffer, int count){
-    nm_sem_wait(&ring_buffer->read_semaphore);
+    dtp_sem_wait(&ring_buffer->read_semaphore);
 }
 
 void dtpRingBufferReleaseRead(DtpRingBuffer32 *ring_buffer, int count){
-    nm_sem_post(&ring_buffer->read_semaphore);
+    dtp_sem_post(&ring_buffer->read_semaphore);
 }
 
 
 void dtpRingBufferCapturedWrite(DtpRingBuffer32 *ring_buffer, int count){
-    nm_sem_wait(&ring_buffer->write_semaphore);
+    dtp_sem_wait(&ring_buffer->write_semaphore);
 }
 
 void dtpRingBufferReleaseWrite(DtpRingBuffer32 *ring_buffer, int count){
-    nm_sem_post(&ring_buffer->write_semaphore);
+    dtp_sem_post(&ring_buffer->write_semaphore);
 }
 
 
