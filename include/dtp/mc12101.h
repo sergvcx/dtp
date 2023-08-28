@@ -27,8 +27,8 @@ extern "C" {
     DEPRECATED
     dtpOpenPloadTarget(int index);
 
-    
-    int dtpMc12101Connect(int desc, PL_Access *access, int index);
+
+    int dtpMc12101Connect(int desc, PL_Access *access, int channel);
 
     //int dtpOpenPloadFile(int index, void *copy_data, DtpBufferCopyFuncT readFunc, DtpBufferCopyFuncT writeFunc);
 

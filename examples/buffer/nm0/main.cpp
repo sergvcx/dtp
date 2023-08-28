@@ -20,6 +20,7 @@ main(){
     int desc = dtpOpen(DTP_READ_WRITE);
 
     dtpNm6407InitBuffer(desc, data_host_input, SIZE,  data_host_output, SIZE, 0);
+    dtpNm6407InitBuffer(desc, data_nm1_input, SIZE,  data_nm1_output, SIZE, 1);
 
     int data[2];
     data[0] = 0;

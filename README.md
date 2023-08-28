@@ -61,7 +61,10 @@ int main(){
 
     UserData com_spec;    
     // инициализация данных
-    int d = dtpOpenCustom(&com_spec, &impl)  // возвращает d > 0 при успехе и -1 при провале получения дескриптора
+    int mode = DTP_READ_WRITE; // или DTP_READ_ONLY или DTP_WRITE_ONLY
+    int d = dtpOpen(mode);
+
+    dtpBind(d, &com_spec, &impl);    
     // код программы
 }
 ```
@@ -77,7 +80,7 @@ int main(){
     - [x] File
     - [ ] Общая память
         - [x] Кольцевой буфер
-    - [ ] DMA (пакетный режим)
+    - [x] DMA (пакетный режим)
     - [ ] DMA (режим одиночных транзакций)
     - [ ] Сервер DMA
     - [ ] LINK (внешние байтовые коммуникационные порты)
