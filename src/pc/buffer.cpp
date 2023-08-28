@@ -25,12 +25,18 @@ static int dtpBufferImplRecv(void *com_spec, DtpAsync *cmd){
     RemoteSharedBufferData *data = (RemoteSharedBufferData *)com_spec;
     int size = cmd->nwords;
     int *dst = (int *)cmd->buf;
+    int head, tail, available;
+
+    head = dtpRingBufferGetHead(data->rb_in);
+    tail = dtpRingBufferGetTail(data->rb_in);
+    available = head - tail;
+    if(available == 0) return DTP_AGAIN;
 
     if(cmd->type == DTP_TASK_1D){            
         while(size > 0){
-            int head = dtpRingBufferGetHead(data->rb_in);
-            int tail = dtpRingBufferGetTail(data->rb_in);
-            int available = head - tail;                
+            head = dtpRingBufferGetHead(data->rb_in);
+            tail = dtpRingBufferGetTail(data->rb_in);
+            available = head - tail;                
 
             int pop_size = (available > size) ? size : available;
             if(pop_size){
@@ -50,13 +56,20 @@ static int dtpBufferImplSend(void *com_spec, DtpAsync *cmd){
     RemoteSharedBufferData *data = (RemoteSharedBufferData *)com_spec;
     int size = cmd->nwords;
     int *src = (int *)cmd->buf;
+    int head, tail, available;
 
     int capacity = dtpRingBufferGetCapacity(data->rb_out);
+
+    head = dtpRingBufferGetHead(data->rb_out);
+    tail = dtpRingBufferGetTail(data->rb_out);
+    available = tail + capacity - head;
+    if(available == 0) return DTP_AGAIN;
+
     if(cmd->type == DTP_TASK_1D){
         while(size > 0){
-            int head = dtpRingBufferGetHead(data->rb_out);
-            int tail = dtpRingBufferGetTail(data->rb_out);
-            int available = tail + capacity - head;
+            head = dtpRingBufferGetHead(data->rb_out);
+            tail = dtpRingBufferGetTail(data->rb_out);
+            available = tail + capacity - head;
 
             int push_size = (available > size) ? size : available;
             if(push_size){

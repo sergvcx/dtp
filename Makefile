@@ -9,7 +9,7 @@ build_nm:
 
 build_x86:
 	cmake --preset x86-msvc
-	cmake --build build/x86-msvc
+	cmake --build build/x86-msvc --config Release
 	
 
 update:
