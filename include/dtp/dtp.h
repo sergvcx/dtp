@@ -15,9 +15,9 @@ typedef void (*DtpNotifyFunctionT)(void *event_data);
 
 
 typedef enum{
-    DTP_OK,
-    DTP_ERROR,
-    DTP_AGAIN
+    DTP_OK = 0,
+    DTP_ERROR = -1,
+    DTP_AGAIN = -2
 } DtpError;
 
 typedef enum {
@@ -26,6 +26,12 @@ typedef enum {
     DTP_TASK_2D
 } DtpAsyncType;
 
+/**
+ * @struct DtpAsync
+ * @brief This structure describe send/receive operation
+ * @var buf Адрес буфера
+ * 
+ */
 typedef struct {
     volatile void *buf;
     size_t nwords;
@@ -35,6 +41,13 @@ typedef struct {
     DtpAsyncType type;
     void *cb_data;
     DtpNotifyFunctionT callback;
+
+    // depended on implementation
+    
+    struct {
+        volatile int status;
+    } DTP_ASYNC_PRIVATE_FIELDS; 
+    
 } DtpAsync;
 
 typedef enum {
@@ -45,24 +58,18 @@ typedef enum {
 } DtpAsyncStatus;
 
 typedef enum {
-    DTP_READ_ONLY,
-    DTP_WRITE_ONLY,
-    DTP_READ_WRITE
+    DTP_READ_ONLY = 0x1,
+    DTP_WRITE_ONLY = 0x2,
+    DTP_READ_WRITE = DTP_READ_ONLY | DTP_WRITE_ONLY
 } DtpAsyncMode;
 
 
 typedef struct {
     int (*send)(void *com_spec, DtpAsync *task);
     int (*recv)(void *com_spec, DtpAsync *task);
-    int (*get_status)(void *com_spec, DtpAsync *task);    
+    int (*update_status)(void *com_spec, DtpAsync *task);
     int (*destroy)(void *com_spec);
 } DtpImplementation;
-
-// typedef enum{
-//     DTP_READ_ONLY,
-//     DTP_WRITE_ONLY,
-//     DTP_READWRITE
-// } DtpMode;
 
 
 
@@ -77,7 +84,7 @@ extern "C" {
      * 
      * @param com_spec Указатель на пользовательскую структуру данных, который будет использоваться во всех функциях dtp
      * @param implementation Реализация интерфейса dtp
-     * @return int >0 при успешном выделении дескриптора, -1 при провале
+     * @return int >0 при успешном выделении дескриптора, -1 при возникновении ошибки
      */
     int 
     DEPRECATED
@@ -159,7 +166,7 @@ extern "C" {
      * @param data Указатель на 32-разрядную переменную
      * @details Функция воспринимает data как int-ое значение и при завершении транзакции пишет в него значение DTP_ST_DONE
      */
-    void dtpDefaultCallback(void *data);
+    //void dtpDefaultCallback(void *data);
 
     /**
      * @brief Функция одномерной синхронной передачи данных

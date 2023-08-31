@@ -64,7 +64,7 @@ int dtpOpenFile(const char *filename, const char *mode){
 
     impl.recv = fileRecv;
     impl.send = fileSend;
-    impl.get_status = fileStatus;
+    impl.update_status = fileStatus;
     impl.destroy = fileDestroy;    
     int desc = dtpOpen(DTP_READ_WRITE);
     if(desc < 0) return -1;
@@ -131,7 +131,7 @@ int dtpOpenFile2(const char *file_input, const char *file_output){
 
     impl.recv = file2Recv;
     impl.send = file2Send;
-    impl.get_status = file2Status;
+    impl.update_status = file2Status;
     impl.destroy = file2Destroy;
     int desc = dtpOpen(DTP_READ_WRITE);
     if(desc < 0) return -1;

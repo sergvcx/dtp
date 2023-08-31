@@ -152,7 +152,7 @@ extern "C"{
         impl.recv = socketRecv;
         impl.send = socketSend;
         impl.destroy = socketDestroy;
-        impl.get_status = socketStatus;
+        impl.update_status = socketStatus;
         socketConnect(sock);
         return dtpBind(desc, sock, &impl);        
     }
@@ -172,7 +172,7 @@ extern "C"{
         impl.recv = socketRecv;
         impl.send = socketSend;
         impl.destroy = socketDestroy;
-        impl.get_status = socketStatus;        
+        impl.update_status = socketStatus;        
         socketListen(sock);
         return dtpBind(desc, sock, &impl);
     }
@@ -192,7 +192,7 @@ extern "C"{
         impl.recv = socketRecv;
         impl.send = socketSend;
         impl.destroy = socketDestroy;
-        impl.get_status = socketStatus;
+        impl.update_status = socketStatus;
         return dtpOpenCustom(sock, &impl);
     }
 }

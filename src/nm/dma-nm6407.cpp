@@ -4,49 +4,40 @@
 #include "stdio.h"
 #include "nm6407int.h"
 #include "nmassert.h"
+#include "tdl.hpp"
 
 typedef int(*get_proc_no_func_t)();
 
 
 // Константы смещения регистров передающего канала относительно базового адреса
-const static int TR_MAIN_COUNTER    = 0x0;
-const static int TR_ADDRESS         = 0x2;
-const static int TR_BIAS            = 0x4;
-const static int TR_ROW_COUNTER     = 0x6;
-const static int TR_ADDRESS_MODE    = 0x8;
-const static int TR_CONTROL         = 0xA;
-const static int TR_INTERRUPT_MASK  = 0xC;
-const static int TR_STATE           = 0xE;
+const static int MAIN_COUNTER    = 0x0;
+const static int ADDRESS         = 0x2;
+const static int BIAS            = 0x4;
+const static int ROW_COUNTER     = 0x6;
+const static int ADDRESS_MODE    = 0x8;
+const static int CONTROL         = 0xA;
+const static int INTERRUPT_MASK  = 0xC;
+const static int STATE           = 0xE;
 
-// Константы смещения регистров принимающего канала относительно базового адреса
-const static int RC_MAIN_COUNTER    = 0x10;
-const static int RC_ADDRESS         = 0x12;
-const static int RC_BIAS            = 0x14;
-const static int RC_ROW_COUNTER     = 0x16;
-const static int RC_ADDRESS_MODE    = 0x18;
-const static int RC_CONTROL         = 0x1A;
-const static int RC_INTERRUPT_MASK  = 0x1C;
-const static int RC_STATE           = 0x1E;
 
-struct DmaInfo{
-    //nm_sem_t *dma_sem;
-    int *base;
-    int is_used = 0;
-    int is_packed = 0;
-    get_proc_no_func_t get_proc;
+struct DmaState{
+    dtp_sem_t *dma_sem = &dma_sem_default;
+    dtp_sem_t dma_sem_default = {1};
+    int *base_tr;
+    int *base_rc;    
 
-    DtpNotifyFunctionT receive_cb;
-    void *receive_cb_data;
-    DtpNotifyFunctionT transfer_cb;
-    void *transfer_cb_data;
+    DtpAsync *receive_cmd;
+    DtpAsync *transfer_cmd;
+};
 
-    DtpAsync *processingTasks[2]; // 0 - send, 1 - recv
-    int status[2];
-    int ireserved;
+struct DmaMode{
+    DmaState *state;
+    void (*startFuncT)(int *base, DtpAsync *startFunc);
 };
 
 struct LinkInfo{
-    int *base;
+    int *base_tr;
+    int *base_rc;
     DtpNotifyFunctionT receive_cb[3];
     void *receive_cb_data[3];
     DtpNotifyFunctionT transfer_cb[3];
@@ -56,69 +47,120 @@ struct LinkInfo{
     DtpAsync *currentReceive;
 };
 
-int getProcNoNm6407(){
-    int *id = (int*)0x40000000;
-    int no = *id;
-    no >>= 24;
-    return no;
+// int getProcNoNm6407(){
+//     int *id = (int*)0x40000000;
+//     int no = *id;
+//     no >>= 24;
+//     return no;
+// }
+
+
+
+static void dmaHandlerNm6407();
+static void dmaHandlerErrorNm6407();
+static void linkHandlerNm6407Transfer0();
+static void linkHandlerNm6407Receive0();
+static void linkHandlerNm6407Transfer1();
+static void linkHandlerNm6407Receive1();
+static void linkHandlerNm6407Transfer2();
+static void linkHandlerNm6407Receive2();
+
+
+static inline int dmaLinkStatus2DtpStatus(int *base);
+static inline void startDmaOrLink(int *base, void *buf, int size64, int row_counter64, int bias64, int mode);
+
+
+static inline void dmaLinkStartTask(int *base, DtpAsync *cmd){
+    int size64 = cmd->nwords >> 1;
+    int bias64 = (cmd->stride - (cmd->width - 2) ) >> 1;
+    int row_counter64 = cmd->width >> 1;
+    int mode = (cmd->type == DTP_TASK_1D) ? 0: 1;
+    startDmaOrLink(base, (void *)cmd->buf, size64, row_counter64, bias64, mode);
 }
 
-static DmaInfo dma_info;
+static inline void dmaLinkStartTaskSingle(int *base, DtpAsync *cmd){
+    int size64 = cmd->nwords >> 1;
+    int bias64 = 2;
+    int row_counter64 = 1;
+    int mode = 1;
+    startDmaOrLink(base, (void *)cmd->buf, size64, row_counter64, bias64, mode);
+}
+
+static DmaState dma_info;
+static DmaMode dma_packet = {
+    .state = &dma_info, 
+    .startFuncT = dmaLinkStartTask,
+};
+static DmaMode dma_single = {
+    .state = &dma_info,
+    .startFuncT = dmaLinkStartTaskSingle
+};
+
+static inline void dma_lock(){
+    dtp_sem_wait(dma_info.dma_sem);
+}
+static inline void dma_unlock(){
+    dtp_sem_post(dma_info.dma_sem);
+}
+
 static LinkInfo link_info;
 
-void dmaHandlerNm6407();
-void dmaHandlerErrorNm6407();
-static inline void linkHandlerNm6407Transfer0();
-static inline void linkHandlerNm6407Receive0();
-static inline void linkHandlerNm6407Transfer1();
-static inline void linkHandlerNm6407Receive1();
-static inline void linkHandlerNm6407Transfer2();
-static inline void linkHandlerNm6407Receive2();
+static inline void startDmaOrLink(int *base, void *buf, int size64, int row_counter64, int bias64, int mode){
+    base[MAIN_COUNTER] = size64;    
+    base[ADDRESS]      = (int)buf;
+    base[BIAS]         = bias64; //(cmd->stride - (cmd->width - 2) ) >> 1;        
+    base[ROW_COUNTER]  = row_counter64;             
+    base[ADDRESS_MODE] = mode; //(cmd->type == DTP_TASK_1D) ? 0: 1;
+    base[CONTROL] = 0;
+    base[CONTROL] = 1;
+}
 
+static int dmaImplSend(void *com_spec, DtpAsync *cmd){
+    DmaMode *info = (DmaMode *)com_spec;
 
-static inline void dmaLinkSetTransferRegisters(int *base, DtpAsync *cmd);
-static inline void dmaLinkSetReceiveRegisters(int *base, DtpAsync *cmd);
-static inline void linkSetIntTransfer(int *base, DtpAsync *cmd);
-static inline void linkSetIntReceive(int *base, DtpAsync *cmd);
-static inline void dmaSetInt(int *base, DtpAsync *cmd);
-static inline void dmaLinkStartTransfer(int *base);
-static inline void dmaLinkStartReceive(int *base);
-static inline int dmaLinkStatus2DtpStatus(int *base);
-
-
-static int dmaImplPacketSend(void *com_spec, DtpAsync *cmd){
-    DmaInfo *info = (DmaInfo *)com_spec;
-    
-    //NMASSERT((cmd->buf    & 0xF) == 0);
-    //NMASSERT((cmd->nwords & 0xF) == 0);
-
-    dmaLinkSetTransferRegisters(info->base, cmd);    
-    dmaSetInt(info->base, cmd);
-    info->transfer_cb = cmd->callback;
-    info->transfer_cb_data = cmd->cb_data;    
-
-    dmaLinkStartTransfer(info->base);
+    dma_lock();
+    info->state->base_rc[INTERRUPT_MASK] = 0;
+    info->state->transfer_cmd = cmd;
+    info->startFuncT(info->state->base_tr, cmd);
+    dma_unlock();
     
     return DTP_OK;
 }
 
-static int dmaImplPacketRecv(void *com_spec, DtpAsync *cmd){
-    DmaInfo *info = (DmaInfo *)com_spec;
+static int dmaImplRecv(void *com_spec, DtpAsync *cmd){
+    DmaMode *info = (DmaMode *)com_spec;
 
-    dmaLinkSetReceiveRegisters(info->base, cmd);
-    dmaSetInt(info->base, cmd);
-    info->receive_cb = cmd->callback;
-    info->receive_cb_data = cmd->cb_data;
+    dma_lock();    
+    info->state->base_rc[INTERRUPT_MASK] = 0;    
+    info->state->receive_cmd = cmd;
+    info->startFuncT(info->state->base_rc, cmd);
+    dma_unlock();
 
-    dmaLinkStartReceive(info->base);    
-    
     return DTP_OK;
 }
+
 
 static int dmaImplGetStatus(void *com_spec, DtpAsync *cmd){
-    DmaInfo *info = (DmaInfo *)com_spec;
+    DmaMode *info = (DmaMode *)com_spec;
 
-    return dmaLinkStatus2DtpStatus(info->base + 0x10);    
+    if(cmd == info->state->receive_cmd || cmd == info->state->transfer_cmd){        
+        int status = dmaLinkStatus2DtpStatus(info->state->base_rc);        
+        cmd->DTP_ASYNC_PRIVATE_FIELDS.status = status;
+        if(status == DTP_ST_DONE && cmd->callback){            
+            cmd->callback(cmd->cb_data);
+            if(cmd == info->state->receive_cmd) info->state->receive_cmd = 0;
+            if(cmd == info->state->transfer_cmd) info->state->transfer_cmd = 0;
+        }
+    }
+
+    return cmd->DTP_ASYNC_PRIVATE_FIELDS.status;
+}
+
+static int dmaImplGetStatusInt(void *com_spec, DtpAsync *cmd){
+    DmaMode *info = (DmaMode *)com_spec;
+    //cmd->DTP_ASYNC_PRIVATE_FIELDS.status = dmaLinkStatus2DtpStatus(info->base + 0x10);
+
+    return cmd->DTP_ASYNC_PRIVATE_FIELDS.status;
 }
 
 static int dmaImplDestroy(void *com_spec){
@@ -127,15 +169,12 @@ static int dmaImplDestroy(void *com_spec){
 
 static int linkImplPacketSend(void *com_spec, DtpAsync *cmd){
     LinkInfo *info = (LinkInfo *)com_spec;
-    
 
-    dmaLinkSetTransferRegisters(info->base, cmd);    
-    linkSetIntTransfer(info->base, cmd);
+    info->base_tr[INTERRUPT_MASK] = 0;    
     info->transfer_cb[0] = cmd->callback;
     info->transfer_cb_data[0] = cmd->cb_data;    
     info->currentTransfer = cmd;
-
-    dmaLinkStartTransfer(info->base);
+    dmaLinkStartTask(info->base_tr, cmd);
     
     return DTP_OK;
 }
@@ -143,13 +182,11 @@ static int linkImplPacketSend(void *com_spec, DtpAsync *cmd){
 static int linkImplPacketRecv(void *com_spec, DtpAsync *cmd){
     LinkInfo *info = (LinkInfo *)com_spec;
 
-    dmaLinkSetReceiveRegisters(info->base, cmd);    
-    linkSetIntReceive(info->base, cmd);
+    info->base_rc[INTERRUPT_MASK] = 0;    
     info->receive_cb[0] = cmd->callback;
     info->receive_cb_data[0] = cmd->cb_data;    
     info->currentReceive = cmd;
-
-    dmaLinkStartReceive(info->base);
+    dmaLinkStartTask(info->base_tr, cmd);
     
     return DTP_OK;
 }
@@ -158,10 +195,10 @@ static int linkImplGetStatus(void *com_spec, DtpAsync *cmd){
     LinkInfo *info = (LinkInfo *)com_spec;
 
     if(cmd == info->currentReceive){
-        return dmaLinkStatus2DtpStatus(info->base + 0x10);
+        return dmaLinkStatus2DtpStatus(info->base_rc);
     }
     if(cmd == info->currentTransfer){
-        return dmaLinkStatus2DtpStatus(info->base);
+        return dmaLinkStatus2DtpStatus(info->base_tr);
     }
     return DTP_ST_ERROR;
 }
@@ -170,78 +207,83 @@ static int linkImplDestroy(void *com_spec){
     return DTP_OK;
 }
 
-int dtpNm6407Dma(int desc, int mask){
-    DmaInfo *info = &dma_info;
-    info->is_used = 1;
-    //nm_sem_init(&info->dma_sem, 1);
-    info->base = (int*)0x10010000;
-    info->is_packed = 1;
-    info->get_proc = getProcNoNm6407;
-    info->processingTasks[0] = 0;
-    info->processingTasks[1] = 0;
-    info->base[0x0C] = 3;
-    info->base[0x1C] = 3;
-
-    EnableInterrupts_PSWR(I_MASK_INM);
-    EnableInterrupts_IMR_High(1 << 0);
-    EnableInterrupts_IMR_High(1 << 1);
-    SetInterruptPeriphery(32, dmaHandlerNm6407);
-    SetInterruptPeriphery(33, dmaHandlerErrorNm6407);
-    
-    DtpImplementation impl;
-    impl.recv = dmaImplPacketRecv;
-    impl.send = dmaImplPacketSend;
-    impl.get_status = dmaImplGetStatus;
-    impl.destroy = dmaImplDestroy;
-    return dtpBind(desc, info, &impl);
+int dtpNm6407SetDmaMutex(int *shared_mutex){
+    if((int)shared_mutex < 0xA0000) return DTP_ERROR;
+    dma_info.dma_sem = (dtp_sem_t *)shared_mutex;
+    //dtp_sem_init(dma_inint *base_rc;fo.dma_sem, 1);
 }
 
-int dtpNm6407Link(int desc, int port){
+int dtpNm6407Dma(int desc, int flags){    
+    DmaState *info = &dma_info;    
+    //nm_sem_init(&info->dma_sem, 1);
+    info->base_tr = (int*)0x10010000;
+    info->base_rc = (int*)0x10010010;    
+    info->receive_cmd = 0;
+    info->transfer_cmd = 0;
+    info->base_tr[INTERRUPT_MASK] = 3;
+    info->base_rc[INTERRUPT_MASK] = 3;
+
+    DtpImplementation impl;
+    if(flags & DTP_NM6407_DMA_STATUS_ONLY){
+        impl.update_status = dmaImplGetStatus;
+    } else {
+        EnableInterrupts_PSWR(I_MASK_INM);
+        EnableInterrupts_IMR_High(1 << 0);
+        EnableInterrupts_IMR_High(1 << 1);
+        SetInterruptPeriphery(32, dmaHandlerNm6407);
+        SetInterruptPeriphery(33, dmaHandlerErrorNm6407);
+        impl.update_status = dmaImplGetStatusInt;
+    }
+    
+    DmaMode *dma_mode = 0;
+    if(flags & DTP_NM6407_DMA_PACKET){
+        dma_mode = &dma_packet;
+    } else {
+        dma_mode = &dma_single;    
+    }
+    
+    impl.recv = dmaImplRecv;
+    impl.send = dmaImplSend;
+    impl.destroy = dmaImplDestroy;
+    return dtpBind(desc, dma_mode, &impl);
+}
+
+int dtpNm6407Link(int desc, int port, int flags){
     LinkInfo *info = &link_info;
     int direction = dtpGetMode(desc);
-    info->base = (int*)0x40001800;
-    switch (port)
-    {
-    case 0:
-        info->base = (int*)0x40001800;
-        break;
-    case 1:
-        info->base = (int*)0x40001800 + 0x400;
-        break;
-    case 2:
-        info->base = (int*)0x40001800 + ( 0x400 << 1 );
-        break;
-    
-    default:
-        return -1;
-    }
-    info->base[0x0C] = 3;
-    info->base[0x1C] = 3;
+    if(port < 0 || port > 2) return -1;
+    info->base_tr = (int*)0x40001800 + 0x400 * port;
+    info->base_rc = (int*)0x40001810 + 0x400 * port;
+    info->base_tr[INTERRUPT_MASK] = 3;
+    info->base_rc[INTERRUPT_MASK] = 3;
 
-    int mask = 1 << 24;
-    mask <<= port;
-    mask <<= direction;
-    EnableInterrupts_IMR_Low(mask);
+    
     switch (port)
     {
     case 0:
         if(direction == DTP_WRITE_ONLY){
+            EnableInterrupts_IMR_Low(1 << 24);
             SetInterruptPeriphery(24, linkHandlerNm6407Transfer0); 
         } else {
+            EnableInterrupts_IMR_Low(1 << 25);
             SetInterruptPeriphery(25, linkHandlerNm6407Receive0);    
         }
         break;
     case 1:
         if(direction == DTP_WRITE_ONLY){
+            EnableInterrupts_IMR_Low(1 << 26);
             SetInterruptPeriphery(26, linkHandlerNm6407Transfer1);    
         } else {
+            EnableInterrupts_IMR_Low(1 << 27);
             SetInterruptPeriphery(27, linkHandlerNm6407Receive1);    
         }
         break;
     case 2:
         if(direction == DTP_WRITE_ONLY){
+            EnableInterrupts_IMR_Low(1 << 28);
             SetInterruptPeriphery(28, linkHandlerNm6407Transfer2);    
         } else {
+            EnableInterrupts_IMR_Low(1 << 29);
             SetInterruptPeriphery(29, linkHandlerNm6407Receive2);    
         }
         break;
@@ -253,7 +295,7 @@ int dtpNm6407Link(int desc, int port){
     DtpImplementation impl;
     impl.recv = linkImplPacketRecv;
     impl.send = linkImplPacketSend;
-    impl.get_status = linkImplGetStatus;
+    impl.update_status = linkImplGetStatus;
     impl.destroy = linkImplDestroy;
     return dtpBind(desc, info, &impl);    
 }
@@ -264,7 +306,7 @@ static inline void linkHandlerNm6407Transfer0(){
     if(info->transfer_cb[0]){
         info->transfer_cb[0](info->transfer_cb_data[0]);
     }
-    int *interrupt_mask = dma_info.base + 0x0C;
+    int *interrupt_mask = dma_info.base_tr + 0x0C;
     *interrupt_mask = 3;
 }
 
@@ -273,7 +315,7 @@ static inline void linkHandlerNm6407Receive0(){
     if(info->receive_cb[0]){
         info->receive_cb[0](info->receive_cb_data[0]);
     }
-    int *interrupt_mask = dma_info.base + 0x1C;
+    int *interrupt_mask = dma_info.base_tr + 0x1C;
     *interrupt_mask = 3;
 }
 
@@ -283,7 +325,7 @@ static inline void linkHandlerNm6407Transfer1(){
         info->transfer_cb[1](info->transfer_cb_data[1]);
     }
 
-    int *interrupt_mask = dma_info.base + 0x0C + 0x400;
+    int *interrupt_mask = dma_info.base_tr + 0x0C + 0x400;
     *interrupt_mask = 3;
 }
 
@@ -292,7 +334,7 @@ static inline void linkHandlerNm6407Receive1(){
     if(info->receive_cb[1]){
         info->receive_cb[1](info->receive_cb_data[1]);
     }
-    int *interrupt_mask = dma_info.base + 0x1C + 0x400;
+    int *interrupt_mask = dma_info.base_tr + 0x1C + 0x400;
     *interrupt_mask = 3;
 }
 
@@ -301,7 +343,7 @@ static inline void linkHandlerNm6407Transfer2(){
     if(info->transfer_cb[2]){
         info->transfer_cb[2](info->transfer_cb_data[2]);
     }
-    int *interrupt_mask = dma_info.base + 0x0C + 2 * 0x400;
+    int *interrupt_mask = dma_info.base_tr + 0x0C + 2 * 0x400;
     *interrupt_mask = 3;
 }
 
@@ -310,28 +352,34 @@ static inline void linkHandlerNm6407Receive2(){
     if(info->receive_cb[2]){
         info->receive_cb[2](info->receive_cb_data[2]);
     }
-    int *interrupt_mask = dma_info.base + 0x1C + 2 * 0x400;
+    int *interrupt_mask = dma_info.base_tr + 0x1C + 2 * 0x400;
     *interrupt_mask = 3;
 }
 
 void __attribute__((optimize("O0"))) dmaHandlerNm6407(){
     
-    if(dma_info.receive_cb){
-        dma_info.receive_cb(dma_info.receive_cb_data);
+    if(dma_info.receive_cmd){
+        if(dma_info.receive_cmd->callback){
+            dma_info.receive_cmd->callback(dma_info.receive_cmd->cb_data);
+        }
+        dma_info.receive_cmd->DTP_ASYNC_PRIVATE_FIELDS.status = DTP_ST_DONE;
+        dma_info.receive_cmd = 0;
     }
-    if(dma_info.transfer_cb){
-        dma_info.transfer_cb(dma_info.transfer_cb_data);
+    if(dma_info.transfer_cmd){
+        if(dma_info.transfer_cmd->callback){
+            dma_info.transfer_cmd->callback(dma_info.transfer_cmd->cb_data);
+        }
+        dma_info.transfer_cmd->DTP_ASYNC_PRIVATE_FIELDS.status = DTP_ST_DONE;
+        dma_info.transfer_cmd = 0;
     }
 
-    
-    int *dmatr_interrupt_mask = dma_info.base + 0x0C;
-    int *dmarc_interrupt_mask = dma_info.base + 0x1C;
-    *dmatr_interrupt_mask = 3;
-    *dmarc_interrupt_mask = 3;
+    dma_info.base_tr[INTERRUPT_MASK] = 3;
+    dma_info.base_rc[INTERRUPT_MASK] = 3;
 
-    int tmp = dma_info.base[0];
+    int tmp = dma_info.base_tr[0];
     tmp++;
-    dma_info.ireserved = tmp;    
+    int *reserved = (int *)0x40000406;
+    *reserved = tmp;    
 
 
     int *IASH_CLR = (int*)0x4000045C;
@@ -341,13 +389,16 @@ void __attribute__((optimize("O0"))) dmaHandlerNm6407(){
 
 void dmaHandlerErrorNm6407(){
     
+    dma_info.base_tr[0x0C] = 3;
+    dma_info.base_tr[0x1C] = 3;
+
+    int tmp = dma_info.base_tr[0];
+    tmp++;
+    int *reserved = (int *)0x40000406;
+    *reserved = tmp;    
+
     int *IASH_CLR = (int*)0x4000045C;
     *IASH_CLR = 1;
-    
-    int *dmatr_interrupt_mask = dma_info.base + 0x0C;
-    int *dmarc_interrupt_mask = dma_info.base + 0x1C;
-    *dmatr_interrupt_mask = 3;
-    *dmarc_interrupt_mask = 3;
 }
 
 int checkDmaPacket(DtpAsync *cmd){
@@ -366,65 +417,15 @@ int checkDmaPacket(DtpAsync *cmd){
 
 
 
-static inline int dmaLinkStatus2DtpStatus(int *base){
-    int *control = base + 0x0A;
-    int status = *control;
+static inline int dmaLinkStatus2DtpStatus(int *base){    
+    int status = base[CONTROL];
     if(status & 4){
-        *control = 0;
-        return DTP_ST_ERROR;  
+        return DTP_ST_ERROR;
     } 
-    if(status & 2){
-        *control = 0;
-        return DTP_ST_DONE;  
+    if(status & 2){        
+        return DTP_ST_DONE; 
     }
     return DTP_ST_IN_PROCESS;
 }
 
 
-static inline void dmaLinkSetTransferRegisters(int *base, DtpAsync *cmd){
-// Поскольку байтовые внешние комуникационные порты и пдп имеют один интерфес и отличаются только базовым адресом, то функция
-// задания параметров копирования у них одинаковая. Флаги прерываний задаются в отдельных функциях
-    base[TR_MAIN_COUNTER] = cmd->nwords >> 1;    
-    base[TR_ADDRESS]      = (int)cmd->buf;
-    base[TR_BIAS]         = (cmd->stride - (cmd->width - 2) ) >> 1;        
-    base[TR_ROW_COUNTER]  = cmd->width >> 1;             
-    base[TR_ADDRESS_MODE] = (cmd->type == DTP_TASK_1D) ? 0: 1;
-}
-
-static inline void dmaLinkSetReceiveRegisters(int *base, DtpAsync *cmd){
-// Поскольку байтовые внешние комуникационные порты и пдп имеют один интерфес и отличаются только базовым адресом, то функция
-// задания параметров копирования у них одинаковая. Флаги прерываний задаются в отдельных функциях
-    base[RC_MAIN_COUNTER] = cmd->nwords >> 1;                               // MainCounter
-    base[RC_ADDRESS]      = (int)cmd->buf;                                  // Addr
-    base[RC_BIAS]         = (cmd->stride - (cmd->width - 2) ) >> 1;         // Bias
-    base[RC_ROW_COUNTER]  = cmd->width >> 1;                                // RowCounter
-    base[RC_ADDRESS_MODE] = (cmd->type == DTP_TASK_1D) ? 0: 1;              // AddressMode
-}
-
-
-
-static inline void dmaLinkStartTransfer(int *base){
-    base[TR_CONTROL] = 0;
-    base[TR_CONTROL] = 1;
-}
-
-static inline void dmaLinkStartReceive(int *base){
-    base[RC_CONTROL] = 0;
-    base[RC_CONTROL] = 1;
-}
-
-static inline void linkSetIntReceive(int *base, DtpAsync *cmd){
-    base[RC_INTERRUPT_MASK] = (cmd->callback == 0) ? 1: 0;
-}
-
-static inline void linkSetIntTransfer(int *base, DtpAsync *cmd){
-    base[TR_INTERRUPT_MASK] = (cmd->callback == 0) ? 1: 0;
-}
-
-static inline void dmaSetInt(int *base, DtpAsync *cmd){
-// Если хоть какой-то канал dma задал callback, то прерывание разрешается
-    int old_value = base[RC_CONTROL];
-    int value = (cmd->callback == 0) ? 1: 0; 
-    base[TR_INTERRUPT_MASK] = old_value & value;
-    base[RC_INTERRUPT_MASK] = old_value & value;
-}

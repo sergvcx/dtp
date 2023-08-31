@@ -90,7 +90,7 @@ extern "C"{
         DtpImplementation impl;
         impl.recv = dtpSpiImplRecv;
         impl.send = dtpSpiImplSend;
-        impl.get_status = dtpSpiImplGetStatus;
+        impl.update_status = dtpSpiImplGetStatus;
         impl.destroy = dtpSpiImplDestroy;  
         return dtpBind(desc, com_spec, &impl);;
     }

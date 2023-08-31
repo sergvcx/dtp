@@ -16,8 +16,8 @@ typedef struct DtpRingBuffer32{
     int *data;
     volatile size_t capacity;
 
-    nm_sem_t read_semaphore;
-    nm_sem_t write_semaphore;
+    dtp_sem_t read_semaphore;
+    dtp_sem_t write_semaphore;
     volatile size_t head;
     volatile size_t tail;
     volatile int is_inited;

@@ -128,11 +128,11 @@ int dtpOpenRemoteSharedBuffer(int index, void *user_data, DtpBufferCopyFuncT rea
     DtpImplementation impl;
     impl.recv = dtpBufferImplRecv;
     impl.send = dtpBufferImplSend;
-    impl.get_status = dtpBufferImplGetStatus;
+    impl.update_status = dtpBufferImplGetStatus;
     impl.destroy = dtpBufferImplDestroy;
     return dtpOpenCustom(data, &impl);
 }
-
+extern "C" {
     int dtpMc12101Connect(int desc, PL_Access *access, int index){
         RemoteSharedBufferData *data = (RemoteSharedBufferData *)malloc(sizeof(RemoteSharedBufferData));
         data->index = index;
@@ -156,7 +156,8 @@ int dtpOpenRemoteSharedBuffer(int index, void *user_data, DtpBufferCopyFuncT rea
         DtpImplementation impl;
         impl.recv = dtpBufferImplRecv;
         impl.send = dtpBufferImplSend;
-        impl.get_status = dtpBufferImplGetStatus;
+        impl.update_status = dtpBufferImplGetStatus;
         impl.destroy = dtpBufferImplDestroy;        
         return dtpBind(desc, data, &impl);
     }
+}

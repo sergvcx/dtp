@@ -27,7 +27,14 @@ extern "C" {
     DEPRECATED
     dtpOpenPloadTarget(int index);
 
-
+    /**
+     * @brief Функция подсоединения хоста к буферу dtp на плате MC121.01
+     * 
+     * @param desc Дескриптор потока ввода-вывода
+     * @param access Access платы MC121.01
+     * @param channel Номер буфера к которому производится подключение
+     * @return int 
+     */
     int dtpMc12101Connect(int desc, PL_Access *access, int channel);
 
     //int dtpOpenPloadFile(int index, void *copy_data, DtpBufferCopyFuncT readFunc, DtpBufferCopyFuncT writeFunc);

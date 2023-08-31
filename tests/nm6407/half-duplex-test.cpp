@@ -18,7 +18,7 @@ int main(){
 #ifdef INPUT
     printf("input\n");
     int desc = dtpOpen(DTP_READ_ONLY);
-    dtpNm6407Link(desc, 2);    
+    dtpNm6407Link(desc, 2, 0);    
     printf("data: %p\n", data);
 
     int light_value = 1;
@@ -51,7 +51,7 @@ int main(){
 #else
     printf("output\n");
     int desc = dtpOpen(DTP_WRITE_ONLY);
-    dtpNm6407Link(desc, 2);    
+    dtpNm6407Link(desc, 2, 0);    
     printf("data: %p\n", data);
 
     data[0] = 0;

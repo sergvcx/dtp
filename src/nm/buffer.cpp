@@ -100,6 +100,7 @@ extern "C" {
 
 
     int dtpRingBufferImplGetStatus(void *com_spec, DtpAsync *cmd){
+        cmd->DTP_ASYNC_PRIVATE_FIELDS.status = DTP_ST_DONE;
         return DTP_ST_DONE;
     }
 
@@ -120,7 +121,7 @@ extern "C" {
         DtpImplementation impl;
         impl.recv = dtpRingBufferImplRecv;
         impl.send = dtpRingBufferImplSend;
-        impl.get_status = dtpRingBufferImplGetStatus;
+        impl.update_status = dtpRingBufferImplGetStatus;
         impl.destroy = 0;
 
         
@@ -163,7 +164,7 @@ extern "C" {
         DtpImplementation impl;
         impl.recv = dtpRingBufferImplRecv;
         impl.send = dtpRingBufferImplSend;
-        impl.get_status = dtpRingBufferImplGetStatus;
+        impl.update_status = dtpRingBufferImplGetStatus;
         impl.destroy = 0;
         return dtpBind(desc, data, &impl);
     }
@@ -267,7 +268,7 @@ extern "C" {
         DtpImplementation impl;
         impl.recv = dtpRingBufferImplRecv;
         impl.send = dtpRingBufferImplSend;        
-        impl.get_status = dtpRingBufferImplGetStatus;
+        impl.update_status = dtpRingBufferImplGetStatus;
         impl.destroy = dtpRingBufferImplDestroy;
         return dtpOpenCustom(data, &impl);
     }

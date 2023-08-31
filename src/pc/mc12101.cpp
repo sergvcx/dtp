@@ -86,7 +86,7 @@ int dtpOpenPloadHost(int index, PL_Access *access, DtpBufferCopyFuncT readFunc, 
     impl.recv = dtpPloadHostImplRecv;
     impl.send = dtpPloadHostImplSend;    
     impl.destroy = dtpPloadHostImplDestroy;
-    impl.get_status = dtpPloadHostImplGetStatus;
+    impl.update_status = dtpPloadHostImplGetStatus;
     return dtpOpenCustom(data, &impl);
 }
 
@@ -164,7 +164,7 @@ extern "C"{
         DtpImplementation impl;
         impl.send = mc12101Send;
         impl.recv = mc12101Recv;
-        impl.get_status = mc12101Status;
+        impl.update_status = mc12101Status;
         impl.destroy = mc12101Destroy;
         return dtpOpenCustom(com_spec, &impl);  
     }
@@ -248,7 +248,7 @@ int dtpOpenPloadRingbuffer(PL_Access *access, uintptr_t hal_ring_buffer_remote_a
     DtpImplementation impl;
     impl.recv = halRbRecv;
     impl.send = halRbSend;
-    impl.get_status = halRbStatus;
+    impl.update_status = halRbStatus;
     impl.destroy = halRbDestroy;    
     return dtpOpenCustom(data, &impl);
 }
@@ -279,7 +279,7 @@ int dtpOpenMc12101Ringbuffer(int boardIndex, int coreIndex, uintptr_t hal_ring_b
     DtpImplementation impl;
     impl.send = halRbSend;
     impl.recv = halRbRecv;
-    impl.get_status = halRbStatus;
+    impl.update_status = halRbStatus;
     impl.destroy = halRbDestroy2;
 
     return dtpOpenCustom(com_spec, &impl); 
