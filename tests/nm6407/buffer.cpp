@@ -19,9 +19,10 @@ int main(){
     //int desc = dtpOpenNm6407Link(2, DTP_NM6407_LINK_INPUT);
 
     int data[4];
+    int ok;
 #ifdef LISTEN
     printf("listen\n");
-    int ok = dtpNm6407InitDefaultBuffer(desc, 0);
+    ok = dtpNm6407InitDefaultBuffer(desc, 0);
     //int ok = dtpListen(desc);
     printf("ok %d\n", ok);
     data[0] = 1;
@@ -31,15 +32,22 @@ int main(){
     for(int i = 0; i < 10; i++){
         int old_value[2] = {data[0], data[1] };
 
-        dtpSend(desc, data, 2);
+        ok = dtpSend(desc, data, 2);
+        NMASSERT(ok == DTP_OK);
 
-        dtpRecv(desc, data, 2);
+        while(1){
+            ok = dtpRecv(desc, data, 2);
+            NMASSERT(ok != DTP_ERROR);
+            if (ok == DTP_OK) break;
+        }
+        
+
         NMASSERT(data[0] == old_value[0] + 1);
         NMASSERT(data[1] == old_value[1] + 1);
     }
 #else
     printf("connect\n");
-    int ok = dtpNm6407ConnectBuffer(desc, 0);
+    ok = dtpNm6407ConnectBuffer(desc, 0);
     printf("ok %d\n", ok);
 
     dtpRecv(desc, data, 3);
@@ -49,10 +57,15 @@ int main(){
     for(int i = 0; i < 10; i++){
         data[0] = 0xCDCDCDCD;
         data[1] = 0xCDCDCDCD;
-        dtpRecv(desc, data, 2);
+        while(1){
+            ok = dtpRecv(desc, data, 2);
+            NMASSERT(ok != DTP_ERROR);
+            if (ok == DTP_OK) break;
+        }
         data[0]++;
         data[1]++;
-        dtpSend(desc, data, 2);
+        ok = dtpSend(desc, data, 2);
+        NMASSERT(ok == DTP_OK);
     }
 #endif 
     dtpClose(desc);
