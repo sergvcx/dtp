@@ -24,7 +24,8 @@ int main(){
         printf("Failed open descriptor");
     }    
 
-    dtpNm6407Dma(desc, DTP_NM6407_DMA_STATUS_ONLY | DTP_NM6407_DMA_PACKET);    
+    //dtpNm6407Dma(desc, DTP_NM6407_DMA_STATUS_ONLY | DTP_NM6407_DMA_PACKET);    
+    dtpNm6407Dma(desc, DTP_NM6407_DMA_PACKET);    
     
 
     int ok;
@@ -55,8 +56,8 @@ int main(){
     if(ok) printf("recv error: %d\n", ok);
 
     // wait send because enabled flag DTP_NM6407_DMA_STATUS_ONLY
-    ok = dtpAsyncWait(desc, &send_cmd);
-    if(ok) printf("wait error: %d\n", ok);       
+    // ok = dtpAsyncWait(desc, &send_cmd);
+    // if(ok) printf("wait error: %d\n", ok);       
 
     for(int i = 0; i < 16; i++){        
         printf("src[%2d]: 0x%x\n", i, src[i]);
