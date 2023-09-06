@@ -28,7 +28,7 @@ int dtpPloadHostImplRecv(void *com_spec, DtpAsync *cmd){
     
     data->readFunc(data->access, (void*)cmd->buf, message[0], cmd->nwords);
 
-    int status = DTP_ST_WAIT_ACCEPT;
+    int status = DTP_ST_DONE;
     data->writeFunc(data->access, (void*)&status, message[1], 1);
 
     return DTP_OK;
@@ -45,7 +45,7 @@ int dtpPloadHostImplSend(void *com_spec, DtpAsync *cmd){
     
     data->writeFunc(data->access, (void*)cmd->buf, message[0], cmd->nwords);
 
-    int status = DTP_ST_WAIT_ACCEPT;
+    int status = DTP_ST_DONE;
     data->writeFunc(data->access, (void*)&status, message[1], 1);
 
     return DTP_OK;

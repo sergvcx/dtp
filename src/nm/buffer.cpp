@@ -39,7 +39,7 @@ extern "C" {
         int capacity = dtpRingBufferGetCapacity(data->rb_out);
         head = dtpRingBufferGetHead(data->rb_out);
         tail = dtpRingBufferGetTail(data->rb_out);
-        available = tail + capacity - head;
+        available = tail + capacity - head;        
         if(available == 0) return DTP_AGAIN;
 
         if(cmd->type == DTP_TASK_1D){
@@ -73,7 +73,7 @@ extern "C" {
         int capacity = dtpRingBufferGetCapacity(data->rb_in);
         head = dtpRingBufferGetHead(data->rb_in);
         tail = dtpRingBufferGetTail(data->rb_in);
-        available = head - tail;
+        available = head - tail;        
         if(available == 0) return DTP_AGAIN;
 
         if(cmd->type == DTP_TASK_1D){            
@@ -128,10 +128,10 @@ extern "C" {
         ringbuffers_table[2 * data->index] = data->rb_in;
         ringbuffers_table[2 * data->index + 1] = data->rb_out;
         
-        if((int) ringbuffers_table[2 * data->index] < 0x100000){
+        if((int) ringbuffers_table[2 * data->index] < 0xA0000){
             ringbuffers_table[2 * data->index] = (DtpRingBuffer32 *)(  (int*)ringbuffers_table[2 * data->index] + offset  );
         }
-        if((int) ringbuffers_table[2 * data->index + 1] < 0x100000){
+        if((int) ringbuffers_table[2 * data->index + 1] < 0xA0000){
             ringbuffers_table[2 * data->index + 1] = (DtpRingBuffer32 *)(  (int*)ringbuffers_table[2 * data->index + 1] + offset  );
         }           
 

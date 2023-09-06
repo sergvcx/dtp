@@ -47,8 +47,8 @@ void dtpRingBufferInit(DtpRingBuffer32 *ringbuffer, void *data, int capacity){
     ringbuffer->data = (int*)data;
     ringbuffer->capacity = capacity;
     dtp_sem_init(&ringbuffer->read_semaphore, 0);
-    //nm_sem_init(&rb->write_semaphore, capacity);
-    dtp_sem_init(&ringbuffer->write_semaphore, 1);
+    dtp_sem_init(&ringbuffer->write_semaphore, capacity);
+    //dtp_sem_init(&ringbuffer->write_semaphore, 1);
     int value_read;
     int value_write;
     dtp_sem_getvalue(&ringbuffer->write_semaphore, &value_write);
@@ -88,47 +88,66 @@ void dtpRingBufferProduce(DtpRingBuffer32 *ring_buffer, int count){
 }
 
 void dtpRingBufferPush(DtpRingBuffer32 *ring_buffer, const void *data, int count){
-    dtpRingBufferCapturedWrite(ring_buffer, count);
-    int head = dtpRingBufferGetHead(ring_buffer);
-    if(head % ring_buffer->capacity + count < ring_buffer->capacity){
-        int *src = (int*)data;
+    int *src = (int*)data;
+    for(int i = 0; i < count; i++){
+        dtp_sem_wait(&ring_buffer->write_semaphore);
+        int head = dtpRingBufferGetHead(ring_buffer);
         int *dst = dtpRingBufferGetPtr(ring_buffer, head);
-        dtpCopyRisc(src, dst, count);
-    } else {
-        int first_part = ring_buffer->capacity - (head & (ring_buffer->capacity - 1));
-        int *src = (int*)data;
-        int *dst = dtpRingBufferGetPtr(ring_buffer, head);
-        dtpCopyRisc(src, dst, first_part);
-
-        int second_part = count - first_part;
-        src = (int*)data + first_part;
-        dst = ring_buffer->data;
-        dtpCopyRisc(src, dst, second_part);
+        *dst = src[i];
+        dtpRingBufferProduce(ring_buffer, 1);
+        dtp_sem_post(&ring_buffer->read_semaphore);
     }
-    dtpRingBufferProduce(ring_buffer, count);    
-    dtpRingBufferReleaseRead(ring_buffer, count);
+    // dtpRingBufferCapturedWrite(ring_buffer, count);
+    // int head = dtpRingBufferGetHead(ring_buffer);
+    // if(head % ring_buffer->capacity + count < ring_buffer->capacity){
+    //     int *src = (int*)data;
+    //     int *dst = dtpRingBufferGetPtr(ring_buffer, head);
+    //     dtpCopyRisc(src, dst, count);
+    // } else {
+    //     int first_part = ring_buffer->capacity - (head & (ring_buffer->capacity - 1));
+    //     int *src = (int*)data;
+    //     int *dst = dtpRingBufferGetPtr(ring_buffer, head);
+    //     dtpCopyRisc(src, dst, first_part);
+
+    //     int second_part = count - first_part;
+    //     src = (int*)data + first_part;
+    //     dst = ring_buffer->data;
+    //     dtpCopyRisc(src, dst, second_part);
+    // }
+    // dtpRingBufferProduce(ring_buffer, count);    
+    // dtpRingBufferReleaseRead(ring_buffer, count);
 }
 
 void dtpRingBufferPop(DtpRingBuffer32 *ring_buffer, void *data, int count){        
-    dtpRingBufferCapturedRead(ring_buffer, count);   
-    int tail = dtpRingBufferGetTail(ring_buffer);
-    if(tail % ring_buffer->capacity + count < ring_buffer->capacity){
+    int *dst = (int*)data;
+    for(int i = 0; i < count; i++){
+        dtp_sem_wait(&ring_buffer->read_semaphore);
+        int tail = dtpRingBufferGetTail(ring_buffer);
         int *src = dtpRingBufferGetPtr(ring_buffer, tail);
-        int *dst = (int*)data;        
-        dtpCopyRisc(src, dst, count);
-    } else {
-        int first_part = ring_buffer->capacity - (tail & (ring_buffer->capacity - 1));
-        int *src = dtpRingBufferGetPtr(ring_buffer, tail); 
-        int *dst = (int*)data;        
-        dtpCopyRisc(src, dst, first_part);
-
-        int second_part = count - first_part;
-        src = ring_buffer->data;
-        dst = (int*)data + first_part;
-        dtpCopyRisc(src, dst, second_part);
+        dst[i] = *src;        
+        dtpRingBufferConsume(ring_buffer, 1);
+        dtp_sem_post(&ring_buffer->write_semaphore);
     }
-    dtpRingBufferConsume(ring_buffer, count);
-    dtpRingBufferReleaseWrite(ring_buffer, count);
+
+    // dtpRingBufferCapturedRead(ring_buffer, count);   
+    // int tail = dtpRingBufferGetTail(ring_buffer);
+    // if(tail % ring_buffer->capacity + count < ring_buffer->capacity){
+    //     int *src = dtpRingBufferGetPtr(ring_buffer, tail);
+    //     int *dst = (int*)data;        
+    //     dtpCopyRisc(src, dst, count);
+    // } else {
+    //     int first_part = ring_buffer->capacity - (tail & (ring_buffer->capacity - 1));
+    //     int *src = dtpRingBufferGetPtr(ring_buffer, tail); 
+    //     int *dst = (int*)data;        
+    //     dtpCopyRisc(src, dst, first_part);
+
+    //     int second_part = count - first_part;
+    //     src = ring_buffer->data;
+    //     dst = (int*)data + first_part;
+    //     dtpCopyRisc(src, dst, second_part);
+    // }
+    // dtpRingBufferConsume(ring_buffer, count);
+    // dtpRingBufferReleaseWrite(ring_buffer, count);
 }
 
 int dtpRingBufferIsEmpty(DtpRingBuffer32 *ring_buffer){
@@ -150,21 +169,29 @@ int dtpRingBufferAvailable(DtpRingBuffer32 *ring_buffer){
 }
 
 
-void dtpRingBufferCapturedRead(DtpRingBuffer32 *ring_buffer, int count){
-    dtp_sem_wait(&ring_buffer->read_semaphore);
+void dtpRingBufferCapturedRead(DtpRingBuffer32 *ring_buffer, int count){    
+    for(int i = 0; i < count; i++){
+        dtp_sem_wait(&ring_buffer->read_semaphore);
+    }
 }
 
-void dtpRingBufferReleaseRead(DtpRingBuffer32 *ring_buffer, int count){
-    dtp_sem_post(&ring_buffer->read_semaphore);
+void dtpRingBufferReleaseRead(DtpRingBuffer32 *ring_buffer, int count){    
+    for(int i = 0; i < count; i++){
+        dtp_sem_post(&ring_buffer->read_semaphore);
+    }
 }
 
 
-void dtpRingBufferCapturedWrite(DtpRingBuffer32 *ring_buffer, int count){
-    dtp_sem_wait(&ring_buffer->write_semaphore);
+void dtpRingBufferCapturedWrite(DtpRingBuffer32 *ring_buffer, int count){    
+    for(int i = 0; i < count; i++){
+        dtp_sem_wait(&ring_buffer->write_semaphore);
+    }
 }
 
-void dtpRingBufferReleaseWrite(DtpRingBuffer32 *ring_buffer, int count){
-    dtp_sem_post(&ring_buffer->write_semaphore);
+void dtpRingBufferReleaseWrite(DtpRingBuffer32 *ring_buffer, int count){    
+    for(int i = 0; i < count; i++){
+        dtp_sem_post(&ring_buffer->write_semaphore);
+    }
 }
 
 

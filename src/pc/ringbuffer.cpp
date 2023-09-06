@@ -146,36 +146,44 @@ int dtpRingBufferAvailable(DtpRingBuffer32 *ring_buffer){
 
 
 void dtpRingBufferCapturedRead(DtpRingBuffer32 *ring_buffer, int count){
-    int sem = 0;
-    do{
-        ring_buffer->readFunc(ring_buffer->user_data, &sem, ring_buffer->read_semaphore_addr, 1);
-        //halSleep(2);
-    } while(sem == 0);
-    sem--;
-    ring_buffer->writeFunc(ring_buffer->user_data, &sem, ring_buffer->read_semaphore_addr, 1);
+    for(int i = 0; i < count; i++){
+        int sem = 0;
+        do{
+            ring_buffer->readFunc(ring_buffer->user_data, &sem, ring_buffer->read_semaphore_addr, 1);
+            //halSleep(2);
+        } while(sem == 0);
+        sem--;
+        ring_buffer->writeFunc(ring_buffer->user_data, &sem, ring_buffer->read_semaphore_addr, 1);
+    }
 }
 
 void dtpRingBufferReleaseRead(DtpRingBuffer32 *ring_buffer, int count){
-    int sem = 0;
-    ring_buffer->readFunc(ring_buffer->user_data, &sem, ring_buffer->read_semaphore_addr, 1);
-    sem++;
-    ring_buffer->writeFunc(ring_buffer->user_data, &sem, ring_buffer->read_semaphore_addr, 1);
+    for(int i = 0; i < count; i++){
+        int sem = 0;
+        ring_buffer->readFunc(ring_buffer->user_data, &sem, ring_buffer->read_semaphore_addr, 1);
+        sem++;
+        ring_buffer->writeFunc(ring_buffer->user_data, &sem, ring_buffer->read_semaphore_addr, 1);
+    }
 }
 
 
 void dtpRingBufferCapturedWrite(DtpRingBuffer32 *ring_buffer, int count){
-    int sem = 0;
-    do{
-        ring_buffer->readFunc(ring_buffer->user_data, &sem, ring_buffer->write_semaphore_addr, 1);
-    } while(sem == 0);
-    sem--;
-    ring_buffer->writeFunc(ring_buffer->user_data, &sem, ring_buffer->write_semaphore_addr, 1);
+    for(int i = 0; i < count; i++){
+        int sem = 0;
+        do{
+            ring_buffer->readFunc(ring_buffer->user_data, &sem, ring_buffer->write_semaphore_addr, 1);
+        } while(sem == 0);
+        sem--;
+        ring_buffer->writeFunc(ring_buffer->user_data, &sem, ring_buffer->write_semaphore_addr, 1);
+    }
 }
 
 void dtpRingBufferReleaseWrite(DtpRingBuffer32 *ring_buffer, int count){
-    int sem = 0;
-    ring_buffer->readFunc(ring_buffer->user_data, &sem, ring_buffer->write_semaphore_addr, 1);
-    sem++;
-    ring_buffer->writeFunc(ring_buffer->user_data, &sem, ring_buffer->write_semaphore_addr, 1);
+    for(int i = 0; i < count; i++){
+        int sem = 0;
+        ring_buffer->readFunc(ring_buffer->user_data, &sem, ring_buffer->write_semaphore_addr, 1);
+        sem++;
+        ring_buffer->writeFunc(ring_buffer->user_data, &sem, ring_buffer->write_semaphore_addr, 1);
+    }
 }
 

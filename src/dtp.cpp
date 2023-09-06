@@ -1,5 +1,6 @@
 #include "dtp/dtp.h"
 #include "dtp_utils.h"
+#include "stdio.h"
 
 
 struct DtpObject{
@@ -74,8 +75,7 @@ extern "C"{
     }
 
     int dtpSend(int desc, const void *data, size_t size){
-        DtpAsync task;
-        int status = DTP_ST_IN_PROCESS;
+        DtpAsync task;        
         task.buf = (volatile void*)data;
         task.nwords = size;
         task.callback = 0;
@@ -86,8 +86,7 @@ extern "C"{
     }
 
     int dtpRecv(int desc, void *data, size_t size){        
-        DtpAsync task;
-        int status = DTP_ST_IN_PROCESS;
+        DtpAsync task;        
         task.buf = (volatile void*)data;
         task.nwords = size;
         task.callback = 0;
@@ -161,16 +160,16 @@ extern "C"{
         return error;
     }
     
-    int dtpAsyncRecv(int desc, DtpAsync *task){    
+    int dtpAsyncRecv(int desc, DtpAsync *task){            
         int no = getIndexFromDesc(desc);    
-        DtpObject *dtp_objects = dtp_context.dtp_objects;
+        DtpObject *dtp_objects = dtp_context.dtp_objects;        
         if( (dtp_objects[no].mode & DTP_READ_ONLY) == 0) return DTP_ERROR;
         DtpImplementation *impl = &dtp_objects[no].implementaion;
         void* com_spec = dtp_objects[no].com_spec;
         return impl->recv(com_spec, task);
     }
 
-    int dtpAsyncSend(int desc, DtpAsync *task){
+    int dtpAsyncSend(int desc, DtpAsync *task){        
         int no = getIndexFromDesc(desc);            
         DtpObject *dtp_objects = dtp_context.dtp_objects;
         if( (dtp_objects[no].mode & DTP_WRITE_ONLY) == 0) return DTP_ERROR;
@@ -179,20 +178,21 @@ extern "C"{
         return impl->send(com_spec, task);
     }
 
-    int dtpAsyncStatus(int desc, DtpAsync *task){
+    int dtpAsyncStatus(int desc, DtpAsync *task){        
         int no = getIndexFromDesc(desc);    
         DtpObject *dtp_objects = dtp_context.dtp_objects;
         DtpImplementation *impl = &dtp_objects[no].implementaion;
         void* com_spec = dtp_objects[no].com_spec;
-        return impl->update_status(com_spec, task);
+        int result = impl->update_status(com_spec, task);
+        return result;
     }
 
-    int dtpAsyncWait(int desc, DtpAsync *task){        
+    int dtpAsyncWait(int desc, DtpAsync *task){         
         int error = 0;
         while(1){
-            error = dtpAsyncStatus(desc, task);
-            if(error == DTP_ST_ERROR) return -1;
-            if(error == DTP_ST_DONE) return 0;
+            error = dtpAsyncStatus(desc, task);            
+            if(error == DTP_ST_ERROR) return DTP_ERROR;
+            if(error == DTP_ST_DONE) return DTP_OK;
         };
     }
 
