@@ -57,6 +57,9 @@ endif()
 if(UNIX)
 	target_compile_options(dtp PUBLIC -fpermissive)
 endif()
+if(MSVC)
+target_compile_definitions(dtp PUBLIC _ITERATOR_DEBUG_LEVEL=0)
+endif()
 
 target_sources(dtp PRIVATE ${sources})
 target_include_directories(dtp 
