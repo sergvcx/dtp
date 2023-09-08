@@ -13,7 +13,11 @@ target_link_libraries(dtp-tests-x86-buffer
         mc12101load)
 
 
-
+if(WIN32)
+target_link_libraries(dtp-tests-x86-buffer 
+    PUBLIC
+        w2_32)
+endif()
 target_include_directories(dtp-tests-x86-buffer
     PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/../../nmassert/include

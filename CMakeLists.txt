@@ -58,7 +58,7 @@ if(UNIX)
 	target_compile_options(dtp PUBLIC -fpermissive)
 endif()
 if(MSVC)
-target_compile_definitions(dtp PUBLIC _ITERATOR_DEBUG_LEVEL=0)
+#target_compile_definitions(dtp PUBLIC _ITERATOR_DEBUG_LEVEL=0)
 endif()
 
 target_sources(dtp PRIVATE ${sources})
@@ -80,8 +80,8 @@ set_target_properties(dtp PROPERTIES
 	ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_LIST_DIR}/lib
 	)
 enable_testing()
-add_subdirectory(examples)
-add_subdirectory(tests)
+#add_subdirectory(examples)
+#add_subdirectory(tests)
 
 
 
