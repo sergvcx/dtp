@@ -13,6 +13,8 @@
 #pragma comment(lib, "Ws2_32.lib")
 #endif
 
+#include "assert.h"
+
 typedef struct{
     int desc;
     int port;
@@ -20,9 +22,11 @@ typedef struct{
 } SocketData;
 
 static int socketRecv(void *com_spec, DtpAsync *cmd){
-    SocketData *data = (SocketData *)com_spec;
-    recv(data->desc, (char*)cmd->buf, cmd->nwords * sizeof(int), 0);
-    return 0;
+    SocketData *data = (SocketData *)com_spec;	
+    int len = recv(data->desc, (char*)cmd->buf, cmd->nwords * sizeof(int), 0);
+	if(len == -1) return DTP_AGAIN;
+	//recvmsg(data->desc,0, 0);
+    return DTP_OK;
 }
 
 static int socketSend(void *com_spec, DtpAsync *cmd){
@@ -71,7 +75,7 @@ static int socketListen(void *com_spec){
     sprintf(buffer, "%d", sock->port);
     int iResult = getaddrinfo(NULL, buffer, &hints, &result);
 
-    sock->listener = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+    sock->listener = socket(result->ai_family, result->ai_socktype, result->ai_protocol);	
 
     iResult = bind(sock->listener, result->ai_addr, (int)result->ai_addrlen);
 
@@ -94,6 +98,10 @@ static int socketListen(void *com_spec){
     }
 
     sock->desc = accept(sock->listener, NULL, NULL);
+#ifdef WIN32
+	u_long iMode = TRUE;
+	iResult = ioctlsocket(sock->desc, FIONBIO, &iMode);
+#endif
 
     if(sock->desc < 0){
         return -1;
@@ -120,6 +128,10 @@ static int socketConnect(void *com_spec){
     int iResult = getaddrinfo(NULL, buffer, &hints, &result);
 
     sock->desc = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+	
+	u_long iMode = TRUE;
+	iResult = ioctlsocket(sock->desc, FIONBIO, &iMode);
+	
     return connect( sock->desc, result->ai_addr, (int)result->ai_addrlen);
 #else
     

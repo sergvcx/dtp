@@ -27,12 +27,26 @@
             "SUFFIX" : ""
           }
         },
+		{
+          "name": "x86-mingw",
+          "displayName": "x86-mingw",
+          "description": "Default build using Ninja Multi-Config generator",          
+          "binaryDir": "${sourceDir}/build/${presetName}",
+          "cacheVariables": {
+            "ARCH": "x64",
+            "SUFFIX" : "-x64",
+			"CMAKE_BUILD_TYPE": "Debug",
+            "CMAKE_CONFIGURATION_TYPES": "Debug;Release",
+            "CMAKE_C_COMPILER": "gcc",
+            "CMAKE_CXX_COMPILER": "g++"
+          }
+        },
         {
           "name": "x86-ninja",
           "displayName": "x86",
           "description": "Default build using Ninja Multi-Config generator",
           "generator": "Ninja Multi-Config",
-          "binaryDir": "${sourceDir}/build/x86-ninja",
+          "binaryDir": "${sourceDir}/build/${presetName}",
           "cacheVariables": {
             "ARCH": "x64",
             "SUFFIX" : "-x64"
@@ -41,7 +55,7 @@
         {
           "name": "x86-msvc",
           "displayName": "x86-msvc",
-		      "binaryDir": "${sourceDir}/build/x86-msvc",
+		      "binaryDir": "${sourceDir}/build/${presetName}",
           "architecture": {
             "value": "x64",
             "strategy": "set"
