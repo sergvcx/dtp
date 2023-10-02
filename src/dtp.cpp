@@ -27,14 +27,14 @@ extern "C"{
     }
 
     inline int getIndexFromDesc(int desc){
-        return desc - 1;
+        return desc;
     }
 
     int dtpOpen(int mode){
         DtpObject *dtp_objects = dtp_context.dtp_objects;
         for(int i = 0; i < DTP_OPEN_MAX; i++){
             if(dtp_objects[i].is_used == 0){
-                dtp_objects[i].fd = i + 1;
+                dtp_objects[i].fd = i;
                 dtp_objects[i].is_used = 1;
                 dtp_objects[i].mode = mode;
                 return dtp_objects[i].fd;
@@ -68,11 +68,11 @@ extern "C"{
         return desc;        
     }
 
-    int dtpOpenDesc(int desc){
-        int no = getIndexFromDesc(desc);
-        DtpObject *dtp_objects = dtp_context.dtp_objects;
-        return dtpOpenCustom(dtp_objects[no].com_spec, &dtp_objects[no].implementaion);
-    }
+    // int dtpOpenDesc(int desc){
+    //     int no = getIndexFromDesc(desc);
+    //     DtpObject *dtp_objects = dtp_context.dtp_objects;
+    //     return dtpOpenCustom(dtp_objects[no].com_spec, &dtp_objects[no].implementaion);
+    // }
 
     int dtpSend(int desc, const void *data, size_t size){
         DtpAsync task;        

@@ -13,7 +13,7 @@ void test_master_whenOpenedBuffer_shouldCorrect(){
     int desc[DTP_BUFFER_COUNT];
     for(int i = 0; i < DTP_BUFFER_COUNT; i++){
         desc[i] = dtpOpen(DTP_READ_WRITE);
-        NMASSERT(desc[i] > 0);
+        NMASSERT(desc[i] >= 0);
 
         ok = dtpNm6407InitDefaultBuffer(desc[i], i);
         NMASSERT(ok == 0);
@@ -57,7 +57,7 @@ void test_slave_whenOpenedBuffer_shouldCorrect(){
     int data[4];
     for(int i = 0; i < DTP_BUFFER_COUNT; i++){
         desc[i] = dtpOpen(DTP_READ_WRITE);
-        NMASSERT(desc[i] > 0);
+        NMASSERT(desc[i] >= 0);
 
         ok = dtpNm6407ConnectBuffer(desc[i], i);
         NMASSERT(ok == 0);
@@ -94,7 +94,7 @@ void test_slave_whenOpenedBuffer_shouldCorrect(){
 void test_master_whenBigData_shouldCopyCorrect(){
     printf("%s\n", __FUNCTION__);
     int dtp = dtpOpen(DTP_READ_WRITE);
-    NMASSERT(dtp > 0);
+    NMASSERT(dtp >= 0);
 
     dtpNm6407InitDefaultBuffer(dtp, 0);
 
@@ -121,7 +121,7 @@ void test_master_whenBigData_shouldCopyCorrect(){
 void test_slave_whenBigData_shouldCopyCorrect(){
     printf("%s\n", __FUNCTION__);
     int dtp = dtpOpen(DTP_READ_WRITE);
-    NMASSERT(dtp > 0);
+    NMASSERT(dtp >= 0);
 
     dtpNm6407ConnectBuffer(dtp, 0);
 

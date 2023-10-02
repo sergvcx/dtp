@@ -81,7 +81,7 @@ set_target_properties(dtp PROPERTIES
 	)
 enable_testing()
 #add_subdirectory(examples)
-#add_subdirectory(tests)
+add_subdirectory(tests)
 
 
 
