@@ -21,6 +21,37 @@ struct RemoteSharedBufferData{
     int index;
 };
 
+    static int blockingPop(DtpRingBuffer32 *ringbuffer, int* data, int size){
+        while(size > 0){
+            int head = dtpRingBufferGetHead(ringbuffer);
+            int tail = dtpRingBufferGetTail(ringbuffer);
+            int available = head - tail;                
+
+            int pop_size = (available > size) ? size : available;
+            if(pop_size){
+                dtpRingBufferPop(ringbuffer, data, pop_size);                    
+                data += pop_size;
+                size -= pop_size;
+            }
+        }
+    }
+
+    static int blockingPush(DtpRingBuffer32 *ringbuffer, int* data, int size){
+        while(size > 0){
+            int head = dtpRingBufferGetHead(ringbuffer);
+            int tail = dtpRingBufferGetTail(ringbuffer);
+            int capacity = dtpRingBufferGetCapacity(ringbuffer);
+            int available = tail + capacity - head;
+
+            int push_size = (available > size) ? size : available;
+            if(push_size){
+                dtpRingBufferPush(ringbuffer, data, push_size);
+                data += push_size;
+                size -= push_size;
+            }   
+        }
+    }
+
 static int dtpBufferImplRecv(void *com_spec, DtpAsync *cmd){
     RemoteSharedBufferData *data = (RemoteSharedBufferData *)com_spec;
     int size = cmd->nwords;
@@ -33,18 +64,7 @@ static int dtpBufferImplRecv(void *com_spec, DtpAsync *cmd){
     if(available == 0) return DTP_AGAIN;
 
     if(cmd->type == DTP_TASK_1D){            
-        while(size > 0){
-            head = dtpRingBufferGetHead(data->rb_in);
-            tail = dtpRingBufferGetTail(data->rb_in);
-            available = head - tail;                
-
-            int pop_size = (available > size) ? size : available;
-            if(pop_size){
-                dtpRingBufferPop(data->rb_in, dst, pop_size);                    
-                dst += pop_size;
-                size -= pop_size;
-            }
-        }
+        blockingPop(data->rb_in, dst, size);
         if(cmd->callback) cmd->callback(cmd->cb_data);
     } else {
         return DTP_ERROR;
@@ -66,18 +86,7 @@ static int dtpBufferImplSend(void *com_spec, DtpAsync *cmd){
     if(available == 0) return DTP_AGAIN;
 
     if(cmd->type == DTP_TASK_1D){
-        while(size > 0){
-            head = dtpRingBufferGetHead(data->rb_out);
-            tail = dtpRingBufferGetTail(data->rb_out);
-            available = tail + capacity - head;
-
-            int push_size = (available > size) ? size : available;
-            if(push_size){
-                dtpRingBufferPush(data->rb_out, src, push_size);
-                src += push_size;
-                size -= push_size;
-            }   
-        }
+        blockingPush(data->rb_out, src, size);
         if(cmd->callback) cmd->callback(cmd->cb_data);
     } else {
         return DTP_ERROR;

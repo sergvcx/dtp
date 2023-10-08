@@ -30,6 +30,38 @@ void dtpRingBufferInit(DtpRingBuffer32 *ringbuffer, void *data, int capacity);
 
 
 extern "C" {
+
+    static int blockingPop(DtpRingBuffer32 *ringbuffer, int* data, int size){
+        while(size > 0){
+            int head = dtpRingBufferGetHead(ringbuffer);
+            int tail = dtpRingBufferGetTail(ringbuffer);
+            int available = head - tail;                
+
+            int pop_size = (available > size) ? size : available;            
+            if(pop_size > 0){
+                dtpRingBufferPop(ringbuffer, data, pop_size);                    
+                data += pop_size;
+                size -= pop_size;
+            }            
+        }
+    }
+
+    static int blockingPush(DtpRingBuffer32 *ringbuffer, int* data, int size){        
+        while(size > 0){
+            int head = dtpRingBufferGetHead(ringbuffer);
+            int tail = dtpRingBufferGetTail(ringbuffer);
+            int capacity = dtpRingBufferGetCapacity(ringbuffer);
+            int available = tail + capacity - head;
+
+            int push_size = (available > size) ? size : available;            
+            if(push_size > 0){
+                dtpRingBufferPush(ringbuffer, data, push_size);
+                data += push_size;
+                size -= push_size;
+            }               
+        }
+    }
+
     int dtpRingBufferImplSend(void *com_spec, DtpAsync *cmd){
         RingBufferData *data = (RingBufferData *)com_spec;
         int *src = (int *)cmd->buf;
@@ -39,28 +71,21 @@ extern "C" {
         int capacity = dtpRingBufferGetCapacity(data->rb_out);
         head = dtpRingBufferGetHead(data->rb_out);
         tail = dtpRingBufferGetTail(data->rb_out);
+        //printf("rb send: head=%d, tail=%d\n", head, tail);
         available = tail + capacity - head;        
         if(available == 0) return DTP_AGAIN;
 
         if(cmd->type == DTP_TASK_1D){
-            while(size > 0){
-                head = dtpRingBufferGetHead(data->rb_out);
-                tail = dtpRingBufferGetTail(data->rb_out);
-                available = tail + capacity - head;
-
-                int push_size = (available > size) ? size : available;
-                if(push_size){
-                    dtpRingBufferPush(data->rb_out, src, push_size);
-                    src += push_size;
-                    size -= push_size;
-                }   
-            }
-            if(cmd->callback){
-                cmd->callback(cmd->cb_data);
-            }
+            blockingPush(data->rb_out, src, size);    
         } else {
-            return DTP_ERROR;
-        }    
+            for(int i = 0; i < size; i += cmd->width){
+                blockingPush(data->rb_out, src, cmd->width);
+                src += cmd->stride;
+            }
+        }   
+        if(cmd->callback){
+            cmd->callback(cmd->cb_data);
+        } 
         return 0;
     }
 
@@ -74,27 +99,20 @@ extern "C" {
         head = dtpRingBufferGetHead(data->rb_in);
         tail = dtpRingBufferGetTail(data->rb_in);
         available = head - tail;        
+        //printf("rb recv: head=%d, tail=%d\n", head, tail);
         if(available == 0) return DTP_AGAIN;
 
         if(cmd->type == DTP_TASK_1D){            
-            while(size > 0){
-                head = dtpRingBufferGetHead(data->rb_in);
-                tail = dtpRingBufferGetTail(data->rb_in);
-                available = head - tail;                
-
-                int pop_size = (available > size) ? size : available;
-                if(pop_size){
-                    dtpRingBufferPop(data->rb_in, dst, pop_size);                    
-                    dst += pop_size;
-                    size -= pop_size;
-                }
-            }
-            if(cmd->callback){
-                cmd->callback(cmd->cb_data);
-            }
+            blockingPop(data->rb_in, dst, size);            
         } else {
-            return DTP_ERROR;
+            for(int i = 0; i < size; i += cmd->width){
+                blockingPop(data->rb_in, dst, cmd->width);
+                dst += cmd->stride;
+            }
         }    
+        if(cmd->callback){
+            cmd->callback(cmd->cb_data);
+        }
         return 0;
     }
 

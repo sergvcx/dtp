@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <netinet/in.h>
+#include <fcntl.h>
 #endif
 #ifdef _WIN32
 #include <winsock2.h>
@@ -101,6 +102,11 @@ static int socketListen(void *com_spec){
 #ifdef WIN32
 	u_long iMode = TRUE;
 	iResult = ioctlsocket(sock->desc, FIONBIO, &iMode);
+#else
+    int flags = fcntl(sock->desc, F_GETFL, 0);
+    if (flags == -1) return false;
+    flags |= O_NONBLOCK;
+    fcntl(sock->desc, F_SETFL, flags);
 #endif
 
     if(sock->desc < 0){
@@ -142,6 +148,12 @@ static int socketConnect(void *com_spec){
     serv_addr.sin_port = htons(sock->port);
     serv_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     sock->desc = socket(AF_INET, SOCK_STREAM, 0); 
+
+    int flags = fcntl(sock->desc, F_GETFL, 0);
+    if (flags == -1) return false;
+    flags |= O_NONBLOCK;
+    fcntl(sock->desc, F_SETFL, flags);
+
     return connect(sock->desc, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 #endif
     
