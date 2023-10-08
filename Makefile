@@ -2,6 +2,10 @@ build: build_nm build_x86 update
 
 setenv:
 	setx DTP "%CD%"
+
+mingw:
+	cmake --preset x86-mingw -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+	cmake --build build\x86-mingw
 	
 build_nm:
 	cmake --preset nm-release
