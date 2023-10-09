@@ -4,7 +4,7 @@
 
 #include "stdio.h"
 
-const uintptr_t ringbuffer = 0xA8000 - 0x10;
+uintptr_t ringbuffer_table_addr = 0xA8000 - 0x10;
 
 extern "C"{
     int PL_ReadMemBlock(PL_Access *access, void *block, int address, int len);
@@ -101,7 +101,7 @@ static int dtpBufferImplGetStatus(void *com_spec, DtpAsync *cmd){
 
 static int dtpBufferImplConnect(void *com_spec){
     RemoteSharedBufferData *data = (RemoteSharedBufferData *)com_spec;
-    uintptr_t rb = ringbuffer + 2 * data->index;
+    uintptr_t rb = ringbuffer_table_addr + 2 * data->index;
     int rb_in_addr = 0;
     int rb_out_addr = 0;
 
@@ -146,7 +146,7 @@ extern "C" {
         RemoteSharedBufferData *data = (RemoteSharedBufferData *)malloc(sizeof(RemoteSharedBufferData));
         data->index = index;
 
-        uintptr_t rb = ringbuffer + 2 * data->index;
+        uintptr_t rb = ringbuffer_table_addr + 2 * data->index;
         int rb_in_addr = 0;
         int rb_out_addr = 0;
         data->readFunc = (DtpBufferCopyFuncT)PL_ReadMemBlock;
@@ -168,5 +168,9 @@ extern "C" {
         impl.update_status = dtpBufferImplGetStatus;
         impl.destroy = dtpBufferImplDestroy;        
         return dtpBind(desc, data, &impl);
+    }
+
+    int dtpBufferSetTableAddr(unsigned int addr){
+        ringbuffer_table_addr = (DtpRingBuffer32 **)addr;
     }
 }

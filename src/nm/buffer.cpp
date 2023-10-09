@@ -123,6 +123,11 @@ extern "C" {
     }
 
     int dtpNm6407InitBuffer(int desc, void *data_in, int capacity_in, void *data_out, int capacity_out, int bufferIndex){
+        dtpBufferInit(desc, data_in, capacity_in, data_out, capacity_out, bufferIndex);
+    }
+
+    int dtpBufferInit(int desc, void *data_in, int capacity_in, void *data_out, int capacity_out, int bufferIndex){    
+    
         RingBufferData *data = ringbuffers_static + bufferIndex;
         data->rb_in = dtpRingBufferAlloc(data_in, capacity_in);
         data->rb_out = dtpRingBufferAlloc(data_out, capacity_out);        
@@ -156,7 +161,12 @@ extern "C" {
         return dtpBind(desc, data, &impl);
     }
 
+    
     int dtpNm6407InitDefaultBuffer(int desc, int index){
+        dtpBufferInitDefault(desc, index);
+    }
+
+    int dtpBufferInitDefault(int desc, int index){
         switch(index){
             case 0:
             return dtpNm6407InitBuffer(desc, dtp_buffer0_data_in, DTP_BUFFER_SIZE, dtp_buffer0_data_out, DTP_BUFFER_SIZE, 0);
@@ -172,10 +182,15 @@ extern "C" {
         
     }
 
-    int dtpNm6407ConnectBuffer(int desc, int index){
-        RingBufferData *data = ringbuffers_static + index;
 
-        data->index = index;
+    int dtpNm6407ConnectBuffer(int desc, int index){
+        dtpBufferConnect(desc, index);
+    }
+
+    int dtpBufferConnect(int desc, int channel){
+        RingBufferData *data = ringbuffers_static + channel;
+
+        data->index = channel;
         data->rb_out = ringbuffers_table[2 * data->index];
         data->rb_in  = ringbuffers_table[2 * data->index + 1];
 
@@ -185,6 +200,10 @@ extern "C" {
         impl.update_status = dtpRingBufferImplGetStatus;
         impl.destroy = 0;
         return dtpBind(desc, data, &impl);
+    }
+
+    int dtpBufferSetTableAddr(unsigned int addr){
+        ringbuffers_table = (DtpRingBuffer32 **)addr;
     }
 
     int dtpRingBufferImplListen(void *com_spec){
