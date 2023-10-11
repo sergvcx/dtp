@@ -34,6 +34,7 @@ struct RemoteSharedBufferData{
                 size -= pop_size;
             }
         }
+		return 0;
     }
 
     static int blockingPush(DtpRingBuffer32 *ringbuffer, int* data, int size){
@@ -50,6 +51,7 @@ struct RemoteSharedBufferData{
                 size -= push_size;
             }   
         }
+		return 0;
     }
 
 static int dtpBufferImplRecv(void *com_spec, DtpAsync *cmd){
