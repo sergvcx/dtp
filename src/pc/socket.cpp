@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <netinet/in.h>
+#include <fcntl.h>
 #endif
 #ifdef _WIN32
 #include <winsock2.h>
@@ -13,6 +14,8 @@
 #pragma comment(lib, "Ws2_32.lib")
 #endif
 
+#include "assert.h"
+
 typedef struct{
     int desc;
     int port;
@@ -20,9 +23,11 @@ typedef struct{
 } SocketData;
 
 static int socketRecv(void *com_spec, DtpAsync *cmd){
-    SocketData *data = (SocketData *)com_spec;
-    recv(data->desc, (char*)cmd->buf, cmd->nwords * sizeof(int), 0);
-    return 0;
+    SocketData *data = (SocketData *)com_spec;	
+    int len = recv(data->desc, (char*)cmd->buf, cmd->nwords * sizeof(int), 0);
+	if(len == -1) return DTP_AGAIN;
+	//recvmsg(data->desc,0, 0);
+    return DTP_OK;
 }
 
 static int socketSend(void *com_spec, DtpAsync *cmd){
@@ -71,7 +76,7 @@ static int socketListen(void *com_spec){
     sprintf(buffer, "%d", sock->port);
     int iResult = getaddrinfo(NULL, buffer, &hints, &result);
 
-    sock->listener = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+    sock->listener = socket(result->ai_family, result->ai_socktype, result->ai_protocol);	
 
     iResult = bind(sock->listener, result->ai_addr, (int)result->ai_addrlen);
 
@@ -94,6 +99,15 @@ static int socketListen(void *com_spec){
     }
 
     sock->desc = accept(sock->listener, NULL, NULL);
+#ifdef WIN32
+	u_long iMode = TRUE;
+	iResult = ioctlsocket(sock->desc, FIONBIO, &iMode);
+#else
+    int flags = fcntl(sock->desc, F_GETFL, 0);
+    if (flags == -1) return false;
+    flags |= O_NONBLOCK;
+    fcntl(sock->desc, F_SETFL, flags);
+#endif
 
     if(sock->desc < 0){
         return -1;
@@ -120,6 +134,10 @@ static int socketConnect(void *com_spec){
     int iResult = getaddrinfo(NULL, buffer, &hints, &result);
 
     sock->desc = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+	
+	u_long iMode = TRUE;
+	iResult = ioctlsocket(sock->desc, FIONBIO, &iMode);
+	
     return connect( sock->desc, result->ai_addr, (int)result->ai_addrlen);
 #else
     
@@ -130,12 +148,59 @@ static int socketConnect(void *com_spec){
     serv_addr.sin_port = htons(sock->port);
     serv_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     sock->desc = socket(AF_INET, SOCK_STREAM, 0); 
+
+    int flags = fcntl(sock->desc, F_GETFL, 0);
+    if (flags == -1) return false;
+    flags |= O_NONBLOCK;
+    fcntl(sock->desc, F_SETFL, flags);
+
     return connect(sock->desc, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 #endif
     
 }
 
 extern "C"{
+
+    int dtpConnectSocket(int desc, const char *ipAddr, int port){
+        SocketData *sock = (SocketData*)malloc(sizeof(SocketData));
+        if(sock == 0)return -1;
+        sock->port = port;
+    #ifdef _WIN32
+        WSADATA wsaData = {0};
+        int iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
+    #endif
+
+
+
+        DtpImplementation impl;
+        impl.recv = socketRecv;
+        impl.send = socketSend;
+        impl.destroy = socketDestroy;
+        impl.update_status = socketStatus;
+        socketConnect(sock);
+        return dtpBind(desc, sock, &impl);        
+    }
+
+    int dtpListenSocket(int desc, int port){
+        SocketData *sock = (SocketData*)malloc(sizeof(SocketData));
+        if(sock == 0)return -1;
+        sock->port = port;
+    #ifdef _WIN32
+        WSADATA wsaData = {0};
+        int iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
+    #endif
+
+
+
+        DtpImplementation impl;
+        impl.recv = socketRecv;
+        impl.send = socketSend;
+        impl.destroy = socketDestroy;
+        impl.update_status = socketStatus;        
+        socketListen(sock);
+        return dtpBind(desc, sock, &impl);
+    }
+
     int dtpOpenSocket(const char *ipAddr, int port){
         SocketData *sock = (SocketData*)malloc(sizeof(SocketData));
         if(sock == 0)return -1;
@@ -151,9 +216,7 @@ extern "C"{
         impl.recv = socketRecv;
         impl.send = socketSend;
         impl.destroy = socketDestroy;
-        impl.get_status = socketStatus;
-        impl.connect = socketConnect;
-        impl.listen = socketListen;
+        impl.update_status = socketStatus;
         return dtpOpenCustom(sock, &impl);
     }
 }

@@ -6,9 +6,91 @@
 #include "string.h"
 #include "dtp/mc12101.h"
 
+#include "ringbuffer.h"
 
 const int DTP_MC12101_HOST_MESSAGE_SIZE = 2;
 const int DTP_MC12101_STATUS_COUNT = 8;
+
+struct PloadTargetData{
+    DtpAsync *pool[DTP_MC12101_STATUS_COUNT];
+    int status[DTP_MC12101_STATUS_COUNT];
+    int desc;
+    int index;    
+};
+
+static int dtpOpenPloadTargetImplListen(void *com_spec){
+    PloadTargetData *data = (PloadTargetData *)com_spec;
+    return dtpListen(data->desc);
+}
+
+static int dtpOpenPloadTargetGetStatus(void *com_spec, DtpAsync *aio){
+    PloadTargetData *data = (PloadTargetData *)com_spec;
+
+    for(int i = 0; i < DTP_MC12101_STATUS_COUNT; i++){
+        if(aio == data->pool[i]){
+            if(data->status[i] == DTP_ST_WAIT_ACCEPT)
+                data->status[i] = DTP_ST_DONE;
+            return data->status[i];
+        }
+    }
+    return DTP_ST_ERROR;
+}
+
+static int dtpOpenPloadTargetSendAddr(void *com_spec, DtpAsync *aio){
+    PloadTargetData *data = (PloadTargetData *)com_spec;
+
+    int message[2];
+    bool founded = false;
+    message[0] = (int)aio->buf;
+    printf("message[0] 0x%x\n", message[0]);
+    while(!founded){
+        for(int i = 0; i < DTP_MC12101_STATUS_COUNT; i++){
+            if(data->status[i] == DTP_ST_DONE){
+                data->status[i] = DTP_ST_IN_PROCESS;
+                data->pool[i] = aio;
+                message[1] = (int)(&data->status[i]);
+                founded = true;
+                break;
+            }
+        }
+    }
+    if(founded){
+        dtpSend(data->desc, message, 2);
+        return DTP_OK;
+    } else {
+        return DTP_AGAIN;
+    }
+}
+
+int dtpOpenPloadTargetImplDestroy(void *com_spec){
+    PloadTargetData *data = (PloadTargetData *)com_spec;
+    dtpClose(data->desc);
+    free(data);
+}
+
+
+int dtpOpenPloadTarget(int index){
+    PloadTargetData *com_spec = (PloadTargetData *)malloc(sizeof(PloadTargetData));
+    if(com_spec == 0) return -1;
+
+    com_spec->index = 0;
+    for(int i = 0; i < DTP_MC12101_STATUS_COUNT; i++){
+        com_spec->status[i] = DTP_ST_DONE;
+        com_spec->pool[i] = 0;
+    }
+    com_spec->desc = dtpConnectSharedBuffer(index);
+
+    DtpImplementation impl;
+    impl.recv = dtpOpenPloadTargetSendAddr;
+    impl.send = dtpOpenPloadTargetSendAddr;    
+    impl.update_status = dtpOpenPloadTargetGetStatus;
+    impl.destroy = dtpOpenPloadTargetImplDestroy;
+    return dtpOpenCustom(com_spec, &impl);
+}
+
+
+
+
 
 struct Mc12101PloadFile{
     FILE *file;
@@ -16,6 +98,7 @@ struct Mc12101PloadFile{
     int status[DTP_MC12101_STATUS_COUNT];
 };
 
+int ncl_getProcessorNo(void);
 
 
 
@@ -92,7 +175,7 @@ static int mc12101Status(void *com_spec, DtpAsync *aio){
     if(data->status[ind] == DTP_ST_IN_PROCESS) return DTP_ST_IN_PROCESS;
 
     if(data->status[ind] == DTP_ST_DONE){
-        if(aio->sigevent == DTP_EVENT_CALLBACK){
+        if(aio->callback){
             aio->callback(aio->cb_data);
         }
         data->pool[ind] = 0;    
@@ -130,12 +213,8 @@ extern "C"{
         DtpImplementation impl;
         impl.send = mc12101Send;
         impl.recv = mc12101Recv;
-        impl.get_status = mc12101Status;
+        impl.update_status = mc12101Status;
         impl.destroy = mc12101Destroy;
-        impl.connect = 0;
-        impl.listen = 0;
-
-        
         return dtpOpenCustom(com_spec, &impl);  
     }
 
@@ -177,7 +256,7 @@ int dtpOpenRingbuffer(void *hal_ring_buffer, DtpMemCopyFuncT push_func, DtpMemCo
     DtpImplementation impl;
 	impl.recv=halRbRecv;
 	impl.send=halRbSend;
-	impl.get_status=halRbStatus;
+	impl.update_status=halRbStatus;
     return dtpOpenCustom(connector, &impl);
 }
 
@@ -202,14 +281,23 @@ int dtpOpenRingbuffer(void *hal_ring_buffer, DtpMemCopyFuncT push_func, DtpMemCo
     	printf("data     :%x\n",connector->data);
 
         DtpImplementation impl;
-    	impl.connect = 0;
-        impl.listen = 0;
-
     	impl.recv=halRbRecv;
     	impl.send=halRbSend;
-    	impl.get_status=halRbStatus;
-        impl.destroy = 0;
+    	impl.update_status=halRbStatus;
+        impl.destroy = halRbDestroy;
         return dtpOpenCustom(connector, &impl);
     }
+
+
+extern int dtp_buffer0_data_in [DTP_BUFFER_SIZE];
+extern int dtp_buffer0_data_out[DTP_BUFFER_SIZE];
+extern int dtp_buffer1_data_in [DTP_BUFFER_SIZE];
+extern int dtp_buffer1_data_out[DTP_BUFFER_SIZE];
+extern int dtp_buffer2_data_in [DTP_BUFFER_SIZE];
+extern int dtp_buffer2_data_out[DTP_BUFFER_SIZE];
+extern int dtp_buffer3_data_in [DTP_BUFFER_SIZE];
+extern int dtp_buffer3_data_out[DTP_BUFFER_SIZE];
+
+  
 
 }

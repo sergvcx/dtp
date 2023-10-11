@@ -7,10 +7,17 @@ typedef void (*DtpNotifyFunctionT)(void *event_data);
 
 #define DTP_OPEN_MAX 16
 
+#ifdef __GNUC__
+#define DEPRECATED __attribute__ ((deprecated))
+#else 
+#define DEPRECATED 
+#endif
+
+
 typedef enum{
-    DTP_OK,
-    DTP_ERROR,
-    DTP_AGAIN
+    DTP_OK = 0,
+    DTP_ERROR = -1,
+    DTP_AGAIN = -2
 } DtpError;
 
 typedef enum {
@@ -19,69 +26,190 @@ typedef enum {
     DTP_TASK_2D
 } DtpAsyncType;
 
-typedef enum {
-    DTP_EVENT_NONE,
-    DTP_EVENT_CALLBACK
-} DtpSigEvent;
-
+/**
+ * @struct DtpAsync
+ * @brief This structure describe send/receive operation
+ * @var buf Адрес буфера
+ * 
+ */
 typedef struct {
-    //int desc;
     volatile void *buf;
     size_t nwords;
     int width;
     int stride;
 
     DtpAsyncType type;
-    DtpSigEvent sigevent;//?
     void *cb_data;
     DtpNotifyFunctionT callback;
+
+    // depended on implementation
+    
+    struct {
+        volatile int status;
+    } DTP_ASYNC_PRIVATE_FIELDS; 
+    
 } DtpAsync;
 
 typedef enum {
     DTP_ST_IN_PROCESS,
     DTP_ST_DONE,
+    DTP_ST_WAIT_ACCEPT,
     DTP_ST_ERROR
 } DtpAsyncStatus;
+
+typedef enum {
+    DTP_READ_ONLY = 0x1,
+    DTP_WRITE_ONLY = 0x2,
+    DTP_READ_WRITE = DTP_READ_ONLY | DTP_WRITE_ONLY
+} DtpAsyncMode;
 
 
 typedef struct {
     int (*send)(void *com_spec, DtpAsync *task);
     int (*recv)(void *com_spec, DtpAsync *task);
-    int (*get_status)(void *com_spec, DtpAsync *task);    
+    int (*update_status)(void *com_spec, DtpAsync *task);
     int (*destroy)(void *com_spec);
-    int (*listen)(void *com_spec);
-    int (*connect)(void *com_spec);
 } DtpImplementation;
 
-// typedef enum{
-//     DTP_READ_ONLY,
-//     DTP_WRITE_ONLY,
-//     DTP_READWRITE
-// } DtpMode;
 
 
-
-//all sizes, widths, strides and offsets in bytes
+//all sizes, widths, strides and offsets in words
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    int dtpOpenCustom(void* com_spec, DtpImplementation *implementation);
+    /**
+     * @brief Универсальная функция получения дескриптора потока ввода-вывода
+     * 
+     * @param com_spec Указатель на пользовательскую структуру данных, который будет использоваться во всех функциях dtp
+     * @param implementation Реализация интерфейса dtp
+     * @return int >0 при успешном выделении дескриптора, -1 при возникновении ошибки
+     */
+    int 
+    DEPRECATED
+    dtpOpenCustom(void* com_spec, DtpImplementation *implementation);
+
+    /**
+     * @brief Выделяет дескриптор
+     * 
+     * @param mode Режим работы потока ввода-выводв (DTP_READ_ONLY, DTP_WRITE_ONLY, DTP_READ_WRITE)
+     * 
+     * @return int Дескриптор потока ввода-вывода
+     * 
+     * 
+     * @details Функция выделяет пустой дескриптор для работы с потоком ввода-вывода
+     */
+    int dtpOpen(int mode);
+
+    int dtpGetMode(int desc);
+
+    /**
+     * @brief Связывает дескритор с интерфейсом
+     * 
+     * @param com_spec 
+     * @param implementation 
+     * @return int Возвращает DTP_OK при успехе и DTP_ERROR при возникновении ошибки
+     */
+    int dtpBind(int desc, void* com_spec, DtpImplementation *implementation);
+
+    //int dtpSetDestroyComSpecFunc(int desc, );
+
+    /**
+     * @brief Функция закрытия дескриптора ввода-вывода
+     * 
+     * @param desc 
+     * @return int 
+     */
     int dtpClose(int desc);
 
-    int dtpConnect(int desc);
-    int dtpListen(int desc);
+    int 
+    DEPRECATED
+    dtpConnect(int desc);
 
+    int 
+    DEPRECATED
+    dtpListen(int desc);
+
+    /**
+     * @brief Функция асинхронного приема данных
+     * 
+     * @param desc Дескриптор ввода-вывода
+     * @param task Структура, описывающая транзакцию
+     * @return int Результат операции
+     */
     int dtpAsyncRecv(int desc, DtpAsync *task);
+
+    /**
+     * @brief Функция запуска асинхронной передачи данных
+     * 
+     * @param desc Дескриптор потока ввода-вывода
+     * @param task Структура с информацией о транзакции
+     * @return int Результат запуска транзакции
+     */
     int dtpAsyncSend(int desc, DtpAsync *task);
+
+    /**
+     * @brief Функция получение статуса транзакции
+     * 
+     * @param desc Дескриптор потока ввода-вывода
+     * @param task Структура с информацией о транзакции
+     * @return int Статус транзакции
+     */
     int dtpAsyncStatus(int desc, DtpAsync *task);
+
     int dtpAsyncWait(int desc, DtpAsync *task);
 
-    
+    /**
+     * @brief Функция обратного вызова по умолчанию
+     * 
+     * @param data Указатель на 32-разрядную переменную
+     * @details Функция воспринимает data как int-ое значение и при завершении транзакции пишет в него значение DTP_ST_DONE
+     */
+    //void dtpDefaultCallback(void *data);
+
+    /**
+     * @brief Функция одномерной синхронной передачи данных
+     * 
+     * @param desc Дескриптор потока ввода-вывода
+     * @param data Указатель на буфер данных
+     * @param nwords размер передаваемых данных в 32-битных словах
+     * @return int 
+     */
     int dtpSend(int desc, const void *data, size_t nwords);
+    
+    /**
+     * @brief Функция одномерной синхронного приема данных
+     * 
+     * @param desc Дескриптор потока ввода-вывода
+     * @param data Указатель на буфер данных
+     * @param nwords Размер передаваемых данных в 32-битных словах
+     * @return int 
+     */
     int dtpRecv(int desc, void *data, size_t nwords);
+
+    /**
+     * @brief Функция двумерной синхронной передачи данных
+     * 
+     * @param desc Дескриптор потока ввода-вывода
+     * @param data Указатель на буфер данных
+     * @param nwords Размер передаваемых данных в 32-битных словах
+     * @param width Размер строки в 32-битных словах
+     * @param stride Шаг между строками в 32-битных словах
+     * @return int Результат операции
+     */
 	int dtpSendM(int desc, const void *data, size_t nwords, int width, int stride);
+
+    /**
+     * @brief Функция двумерного синхронного приема данных
+     * 
+     * @param desc Дескриптор потока ввода-вывода
+     * @param data Указатель на буфер данных
+     * @param nwords Размер передаваемых данных в 32-битных словах
+     * @param width Размер строки в 32-битных словах
+     * @param stride Шаг между строками в 32-битных словах
+     * @return int Результат операции
+     */
     int dtpRecvM(int desc, void *data, size_t nwords, int width, int stride);
 
 

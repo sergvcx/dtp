@@ -13,3 +13,11 @@ target_link_libraries(dtp-examples-socket-server
     PUBLIC
         dtp::dtp)
 
+if(WIN32)
+target_link_libraries(dtp-examples-socket-server
+    PUBLIC
+        w2_32)
+target_link_libraries(dtp-examples-socket-client
+    PUBLIC
+        w2_32)
+endif()

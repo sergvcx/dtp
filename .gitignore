@@ -15,8 +15,12 @@ _deps
 .vs/
 .vscode/
 
+#generated files
+doc/
+
 #build
 build/
 lib/
 #
 *.a
+*.abs

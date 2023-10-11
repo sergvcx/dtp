@@ -1,91 +1,58 @@
 #include "dtp/dtp.h"
-#include "dtp/file.h"
-#include "hal/ringbuffert.h"
-#include "dtp/mc12101.h"
-#include "mc12101load_nm.h"
+#include "dtp/nm6407.h"
+#include "stdio.h"
+#include "time.h"
 
-#define FILE "exchange.bin"
+#define SIZE 4
 
-int data_host_input[DTP_RING_BUFFER_SIZE_32];
-int data_host_output[DTP_RING_BUFFER_SIZE_32];
+int data_host_input[SIZE];
+int data_host_output[SIZE];
 
-int data_nm1_input[DTP_RING_BUFFER_SIZE_32];
-int data_nm1_output[DTP_RING_BUFFER_SIZE_32];
+int data_nm1_input[SIZE];
+int data_nm1_output[SIZE];
 
-HalRingBufferData<int, DTP_RING_BUFFER_SIZE_32> ring_host_input;
-HalRingBufferData<int, DTP_RING_BUFFER_SIZE_32> ring_host_output;
-
-HalRingBufferData<int, DTP_RING_BUFFER_SIZE_32> ring_nm1_input;
-HalRingBufferData<int, DTP_RING_BUFFER_SIZE_32> ring_nm1_output;
-
-int main(){
-
-    int file_desc = dtpOpenFile(FILE,"wb");    
-
-    ring_host_input.init(1024);
-    ring_host_input.data = data_host_input;
-    ring_host_output.init(2*1024);
-    ring_host_output.data = data_host_output;
-
-    ring_nm1_input.init(4*1024);
-    ring_nm1_input.data = data_nm1_input;
-    ring_nm1_output.init(8*1024);
-    ring_nm1_output.data = data_nm1_output;
-    printf("input[%d]: %p, output[%d]: %p\n", ring_host_input.size, &ring_host_input, ring_host_output.size, &ring_host_output);
-    printf("data_host_input: %p, data_host_output: %p\n", data_host_input, data_host_output);
-    int offset = 0x40000 + 0x40000 * ncl_getProcessorNo();
-
-    // write to file addr of pc-nm0 ring buffers
-    int ring_input_addr = (int)&ring_host_input;
-    int ring_output_addr = (int)&ring_host_output;    
-    if(ring_input_addr < 0x80000) ring_input_addr+=offset;
-    if(ring_output_addr < 0x80000) ring_output_addr+=offset;
-    printf("ring_input_addr %p, ring_output_addr %p\n", ring_input_addr, ring_output_addr);
-    dtpSend(file_desc, &ring_input_addr, 1);
-    dtpSend(file_desc, &ring_output_addr, 1);
-
-    // write to file addr of nm0-nm1 ring buffers
-    ring_input_addr = (int)&ring_nm1_input;
-    ring_output_addr = (int)&ring_nm1_output;
-    if(ring_input_addr < 0x80000) ring_input_addr+=offset;
-    if(ring_output_addr < 0x80000) ring_output_addr+=offset;
-    printf("ring_input_addr %p, ring_output_addr %p\n", ring_input_addr, ring_output_addr);
-    dtpSend(file_desc, &ring_input_addr, 1);
-    dtpSend(file_desc, &ring_output_addr, 1);
-    dtpClose(file_desc);
-
-    // -------------------------------------------------------------
-
-    
-    //--------------pc-nm0----------------
-    int rb_desc_r = dtpOpenRingbufferDefault(&ring_host_input);
-    int rb_desc_w = dtpOpenRingbufferDefault(&ring_host_output);
-
-    int data[2] = {0, 1};
-    dtpSend(rb_desc_w, data, 2);
-
-    dtpRecv(rb_desc_r, data, 2);
-    printf("recv: %d, %d\n", data[0], data[1]);
-
-    dtpClose(rb_desc_r);
-    dtpClose(rb_desc_w);
+#define DELAY 1000000
 
 
+int 
+__attribute__((optimize("O0")))
+main(){
+    int desc0 = dtpOpen(DTP_READ_WRITE);
+    int desc1 = dtpOpen(DTP_READ_WRITE);
 
+    dtpNm6407InitBuffer(desc0, data_host_input, SIZE,  data_host_output, SIZE, 0);
+    dtpNm6407InitBuffer(desc1, data_nm1_input, SIZE,  data_nm1_output, SIZE, 1);
 
-    //--------------nm0-nm1----------------
-    rb_desc_r = dtpOpenRingbufferDefault(&ring_nm1_input);
-    rb_desc_w = dtpOpenRingbufferDefault(&ring_nm1_output);
-
+    int data[2];
     data[0] = 0;
     data[1] = 1;
-    dtpSend(rb_desc_w, data, 2);
+    int error = 0;
+    for(int i = 0; i < 10; i++){
+        printf("iteration: %d\n", i);
+        do{
+            error = dtpSend(desc0, data, 2);
+            if(error == DTP_AGAIN) {
+                printf("DTP_AGAIN\n");
+                for(int k = 0; k < DELAY; k++);
+            }
+        }while(error == DTP_AGAIN);
 
-    dtpRecv(rb_desc_r, data, 2);
-    printf("recv: %d, %d\n", data[0], data[1]);
 
-    dtpClose(rb_desc_r);
-    dtpClose(rb_desc_w);
+        do{
+            error = dtpRecv(desc0, data, 2);
+            if(error == DTP_AGAIN) {
+                for(int k = 0; k < DELAY; k++);
+                printf("DTP_AGAIN\n");
+            }
+        }while(error == DTP_AGAIN);
+
+
+        if(data[0] != i + 1 || data[1] != i + 2){
+            printf("Wrong values\n");
+            return 0;
+        }
+    }
+
 
     return 0;
 }

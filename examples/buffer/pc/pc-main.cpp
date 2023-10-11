@@ -1,40 +1,68 @@
 #include "dtp/dtp.h"
-#include "dtp/file.h"
-#include "dtp/mc12101-host.h"
+#include "dtp/mc12101.h"
 #include "stdio.h"
+#include "mc12101load.h"
+#include <iostream>
+
+#include <chrono>
+#include <thread>
 
 #define FILE "exchange.bin"
 
 int main(){
+    using namespace std::this_thread; // sleep_for, sleep_until
+    using namespace std::chrono; // nanoseconds, system_clock, seconds
 
-    int file_desc = 0;
-    do{
-        file_desc = dtpOpenFile(FILE,"rb");    
-    }while(file_desc < 0);
-    
-    uintptr_t addr_write = 0;
-    uintptr_t addr_read = 0;
-    dtpRecv(file_desc, &addr_write, 1);
-    printf("addr_write %p\n", addr_write);
-    dtpRecv(file_desc, &addr_read, 1);
-    printf("addr_read %p\n", addr_read);
-    dtpClose(file_desc);
+    PL_Board *board;
+    PL_Access *access;
 
-    // -------------------------------------------------------------
+    PL_GetBoardDesc(0, &board);
+    PL_GetAccess(board, 0, &access);
 
+    int desc = dtpOpen(DTP_READ_WRITE);
+    if(desc < 0){
+        std::cout << "Failed allocate descriptor" << std::endl;
+        return -1;
+    }
 
-    int dw = dtpOpenMc12101Ringbuffer(0, 0, addr_write);
-    int dr = dtpOpenMc12101Ringbuffer(0, 0, addr_read);
+    dtpMc12101Connect(desc, access, 0);
+
     int data[2];
-    dtpRecv(dr, data, 2);
-    printf("recv: %d, %d\n", data[0], data[1]);
-    data[0]++;
-    data[1]++;
-    dtpSend(dw, data, 2);
+    int error = 0;
+    for(int i = 0; i < 10; i++){
+        std::cout << "iteration: " << i << std::endl;
+        do{
+            error = dtpRecv(desc, data, 2);
+            if(error == DTP_AGAIN) {
+                std::cout << "DTP_AGAIN" << std::endl;
+                sleep_for(milliseconds(200));
+            }
+        }while(error == DTP_AGAIN);
+
+
+        if(data[0] != i || data[1] != i + 1){
+            std::cout << "Wrong values" << std::endl;
+            return 0;
+        }
+
+
+        data[0]++;
+        data[1]++;
+        do{
+            error = dtpSend(desc, data, 2);
+            if(error) {
+                std::cout << "DTP_AGAIN" << std::endl;
+                sleep_for(milliseconds(200));
+            }
+        }while(error == DTP_AGAIN);
+    }
+
+    dtpClose(desc);
+
+    PL_CloseAccess(access);
+    PL_CloseBoardDesc(board);
+    return 0;
     
-    
-    dtpClose(dw);
-    dtpClose(dr);
 }
 
 

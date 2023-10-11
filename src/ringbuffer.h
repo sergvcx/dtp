@@ -1,21 +1,27 @@
 #ifndef __DTP_RINGBUFFER_H_INCLUDED__
 #define __DTP_RINGBUFFER_H_INCLUDED__
 #include "dtp/dtp.h"
+#include "dtp/buffer.h"
 
 typedef struct DtpRingBuffer32 DtpRingBuffer32;
-typedef struct HalAccess HalAccess;
 
-#define DTP_BUFFER_SIZE 0x200
-#define DTP_BUFFER_COUNT 4
+#define DTP_BUFFER_SIZE 64
+
+#ifdef __NM__
+#define DTP_RING_BUFFER_SIZEOF_INT 16
+#else
+#define DTP_RING_BUFFER_SIZEOF_INT 16
+#endif
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
     DtpRingBuffer32 *dtpRingBufferAlloc(void *data, int capacity);
+    void dtpRingBufferInit(DtpRingBuffer32 *ringbuffer, void *data, int capacity);
     //void dtpRingBufferFree(DtpRingBuffer32 *ring_buffer);
 
-    DtpRingBuffer32 *dtpRingBufferBind(HalAccess *access, uintptr_t remoteRingBuffer);
+    DtpRingBuffer32 *dtpRingBufferBind(void *user_data, uintptr_t remoteRingBuffer, DtpBufferCopyFuncT readFunc, DtpBufferCopyFuncT writeFunc);
 
     int dtpRingBufferGetTail(DtpRingBuffer32 *ring_buffer);
     int dtpRingBufferGetHead(DtpRingBuffer32 *ring_buffer);

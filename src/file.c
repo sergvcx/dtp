@@ -1,5 +1,5 @@
 #include "dtp/dtp.h"
-#include "dtp/mc12101-host.h"
+//#include "dtp/mc12101-host.h"
 #include "stdio.h"
 #include "malloc.h"
 
@@ -11,15 +11,7 @@ typedef struct {
 static int fileRecv(void *com_spec, DtpAsync *aio){
     FILE *file = (FILE*)com_spec;
 	
-	size_t start = ftell(file);
-	printf(" start=%d\n", start);
-	//size_t tell;
-	//do {
-	//	fseek(file, 0, SEEK_CUREND);
-	//	tell = ftell(file);
-	//	
-	//}
-    //while (tell - start < aio->nwords * sizeof(int));  //fteel in bytes or words
+	size_t start = ftell(file);	
 
 	size_t leftToRead32 = aio->nwords;
 	int* data = (int*)aio->buf;
@@ -32,15 +24,7 @@ static int fileRecv(void *com_spec, DtpAsync *aio){
 		leftToRead32 -= rsize;
 		data+= rsize;
 		int tell = ftell(file);
-		printf(" rsize=%d tell=%d\n", rsize, tell);
-	}
-	
-
-	//printf(" tell=%d\n", tell);
-
-	//fseek(file, start*4/sizeof(int), SEEK_SET);
-
-    //size_t rsize = fread((void*)aio->buf, sizeof(int), aio->nwords, file);
+	}	
 	
     return 0;
 }
@@ -80,29 +64,35 @@ int dtpOpenFile(const char *filename, const char *mode){
 
     impl.recv = fileRecv;
     impl.send = fileSend;
-    impl.get_status = fileStatus;
-    impl.destroy = fileDestroy;
-    impl.connect = 0;
-    impl.listen = 0;
-    return dtpOpenCustom(file, &impl);
+    impl.update_status = fileStatus;
+    impl.destroy = fileDestroy;    
+    int desc = dtpOpen(DTP_READ_WRITE);
+    if(desc < 0) return -1;
+    dtpBind(desc, file, &impl);
+    return desc;
 }
 
 
 static int file2Recv(void *com_spec, DtpAsync *aio){
     FileData *fileData = (FileData*)com_spec;
-    FILE *file = fileData->file_in;
-	
-	size_t start = ftell(file);
-	size_t tell;
-	do {
-		fseek(file, 0, SEEK_END);
-		tell = ftell(file);
-	}
-    while (tell - start < aio->nwords * sizeof(int));  //fteel in bytes or words
-	fseek(file, start, SEEK_SET);
+    FILE *file = fileData->file_in;	
 
+	int remain = aio->nwords;
+	int offset = 0;
     size_t rsize = fread((void*)aio->buf, sizeof(int), aio->nwords, file);
-    return 0;
+	if(rsize != 0){
+		remain -= rsize;
+		offset += rsize;
+		while(remain > 0){
+			rsize = fread((int*)aio->buf + offset,  sizeof(int), remain, file);
+			remain -= rsize;
+			offset += rsize;
+		}
+        return DTP_OK;
+    }
+    else {
+        return DTP_AGAIN;
+    }    
 }
 
 static int file2Send(void *com_spec, DtpAsync *aio){
@@ -126,6 +116,24 @@ static int file2Status(void *com_spec, DtpAsync *aio){
     return DTP_ST_DONE;
 }
 
+int dtpBindFiles(int desc, FILE *input, FILE *output){
+	DtpImplementation impl;
+
+    FileData *fileData = malloc(sizeof(FileData));
+    if(fileData == 0) return -1;
+
+    fileData->file_in = input;    
+
+    fileData->file_out = output;
+    
+    impl.recv = file2Recv;
+    impl.send = file2Send;
+    impl.update_status = file2Status;
+    impl.destroy = file2Destroy;
+	
+	return dtpBind(desc, fileData, &impl);	
+}
+
 int dtpOpenFile2(const char *file_input, const char *file_output){
     DtpImplementation impl;
 
@@ -146,7 +154,10 @@ int dtpOpenFile2(const char *file_input, const char *file_output){
 
     impl.recv = file2Recv;
     impl.send = file2Send;
-    impl.get_status = file2Status;
+    impl.update_status = file2Status;
     impl.destroy = file2Destroy;
-    return dtpOpenCustom(fileData, &impl);
+    int desc = dtpOpen(DTP_READ_WRITE);
+    if(desc < 0) return -1;
+    dtpBind(desc, fileData, &impl);
+    return desc;
 }
