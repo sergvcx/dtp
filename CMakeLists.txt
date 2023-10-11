@@ -12,7 +12,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release")
-
+set(CMAKE_DEBUG_POSTFIX d)
 add_library(dtp)
 add_library(dtp::dtp ALIAS dtp)
 
