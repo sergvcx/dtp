@@ -44,7 +44,38 @@ extern "C" {
     DEPRECATED
     dtpOpenRemoteSharedBuffer(int index, void *copy_data, DtpBufferCopyFuncT readFunc, DtpBufferCopyFuncT writeFunc);
 
-    //int dtpGetImplementation()
+    /**
+     * @brief Инициализирует кольцевые буфера с заданными буферами и привязывает их к дескриптору
+     * 
+     * @param desc Дескриптор потока ввода-вывода
+     * @param data_in Буфер для входных данных
+     * @param capacity_in Размер входного буфера
+     * @param data_out Буфер для выходных данных
+     * @param capacity_out Размер буфера выходных данных
+     * @param channel Номер канала к которому привыязывают кольцевые буфера (0.. (DTP_BUFFER_COUNT - 1))
+     * @return int Возвращает DTP_OK при успехе и DTP_ERROR при возникновении ошибке
+     */
+    int dtpBufferInit(int desc, void *data_in, int capacity_in, void *data_out, int capacity_out, int channel);
+
+    /**
+     * @brief Инциализирует структуруы кольцевых буферов внутренними буферами и привязывает их к дескриптору . Размер этих буферов равен 64
+     * 
+     * @param desc Дескриптор потока ввода-вывода
+     * @param channel Индекс, к которому привязываются кольцевые буферы (0.. (DTP_BUFFER_COUNT - 1))
+     * @return int Возвращает DTP_OK при успехе и DTP_ERROR при возникновении ошибке
+     */
+    int dtpBufferInitDefault(int desc, int channel);
+
+    int dtpBufferSetTableAddr(unsigned int addr);
+
+    /**
+     * @brief Подключение к буферу с заданным индексом
+     * 
+     * @param desc Дескриптор потока ввода-вывода
+     * @param channel Номер канала (0.. (DTP_BUFFER_COUNT - 1))
+     * @return int Возвращает DTP_OK при успехе и DTP_ERROR при возникновении ошибке
+     */
+    int dtpBufferConnect(int desc, int channel);
 
 #ifdef __cplusplus
 }
