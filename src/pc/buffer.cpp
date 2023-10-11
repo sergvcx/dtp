@@ -171,6 +171,7 @@ extern "C" {
     }
 
     int dtpBufferSetTableAddr(unsigned int addr){
-        ringbuffer_table_addr = (DtpRingBuffer32 **)addr;
+        //ringbuffer_table_addr = (DtpRingBuffer32 **)addr;
+        return -1;
     }
 }
