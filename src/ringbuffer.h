@@ -49,6 +49,8 @@ extern "C" {
 
     void dtpRingBufferSync(DtpRingBuffer32 *ring_buffer);
 
+    int dtpRingBufferGetLastError(DtpRingBuffer32 *ring_buffer);
+
 #ifdef __cplusplus
 }
 #endif

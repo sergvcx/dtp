@@ -30,6 +30,7 @@ typedef struct DtpRingBuffer32{
     void* user_data;
     DtpBufferCopyFuncT readFunc;
     DtpBufferCopyFuncT writeFunc;
+    int error;
 } DtpRingBuffer32;
 
 
@@ -53,32 +54,33 @@ DtpRingBuffer32 *dtpRingBufferBind(void *user_data, uintptr_t remoteRingBuffer, 
     result->readFunc = readFunc;
     result->writeFunc = writeFunc;
     result->user_data = user_data;
-    int ok;
-    ok = result->readFunc(result->user_data, &result->data_addr, remoteRingBuffer, 1);
-    if(ok) return 0;
+    result->error = 0;    
+    result->error = result->readFunc(result->user_data, &result->data_addr, remoteRingBuffer, 1);
+    if(result->error) return 0;
     result->readFunc(result->user_data, &result->capacity, remoteRingBuffer + 1, 1);
-    if(ok) return 0;
+    if(result->error) return 0;
     result->read_semaphore_addr = remoteRingBuffer + 2;
     result->write_semaphore_addr = remoteRingBuffer + 4;
     result->head_addr = remoteRingBuffer + 6;
     result->tail_addr = remoteRingBuffer + 7;
     
-    
     return result;
 
 }
 
+int dtpRingBufferGetLastError(DtpRingBuffer32 *ring_buffer){
+    return ring_buffer->error;
+}
+
 int dtpRingBufferGetTail(DtpRingBuffer32 *ring_buffer){
     int tail = 0;
-    int ok = ring_buffer->readFunc(ring_buffer->user_data, &tail, ring_buffer->tail_addr, 1);
-    NMASSERT(ok == 0);
+    ring_buffer->error = ring_buffer->readFunc(ring_buffer->user_data, &tail, ring_buffer->tail_addr, 1);    
     return tail;
 }
 
 int dtpRingBufferGetHead(DtpRingBuffer32 *ring_buffer){
     int head = 0;
-    int ok = ring_buffer->readFunc(ring_buffer->user_data, &head, ring_buffer->head_addr, 1);
-    NMASSERT(ok == 0);
+    ring_buffer->error = ring_buffer->readFunc(ring_buffer->user_data, &head, ring_buffer->head_addr, 1);    
     return head;
 }
 uintptr_t dtpRingBufferGetPtr(DtpRingBuffer32 *ring_buffer, int index){
@@ -93,66 +95,67 @@ int dtpRingBufferGetCapacity(DtpRingBuffer32 *ring_buffer){
 void dtpRingBufferConsume(DtpRingBuffer32 *ring_buffer, int count){
     int tail = dtpRingBufferGetTail(ring_buffer);
     tail += count;
-    int ok = ring_buffer->writeFunc(ring_buffer->user_data, &tail, ring_buffer->tail_addr, 1);
-    NMASSERT(ok == 0);
+    ring_buffer->error = ring_buffer->writeFunc(ring_buffer->user_data, &tail, ring_buffer->tail_addr, 1);    
 }
 
 void dtpRingBufferProduce(DtpRingBuffer32 *ring_buffer, int count){
     int head = dtpRingBufferGetHead(ring_buffer);    
     head += count;
-    int ok = ring_buffer->writeFunc(ring_buffer->user_data, &head, ring_buffer->head_addr, 1);
-    NMASSERT(ok == 0);
+    ring_buffer->error = ring_buffer->writeFunc(ring_buffer->user_data, &head, ring_buffer->head_addr, 1);    
 }
 
 int dtpRingBufferPush(DtpRingBuffer32 *ring_buffer, const void *data, int count){
     //dtpRingBufferCapturedWrite(ring_buffer, count);
     int head = dtpRingBufferGetHead(ring_buffer);    
-    int ok;
+    if (ring_buffer->error) return -1;
+
     if(head % ring_buffer->capacity + count < ring_buffer->capacity){
         int *src = (int*)data;
         uintptr_t dst = dtpRingBufferGetPtr(ring_buffer, head);
-        ok = ring_buffer->writeFunc(ring_buffer->user_data, src, dst, count);        
-        if(ok) return -1;
+        ring_buffer->error = ring_buffer->writeFunc(ring_buffer->user_data, src, dst, count);        
+        if (ring_buffer->error) return -1;
     } else {
         int first_part = ring_buffer->capacity - head % ring_buffer->capacity;
         int *src = (int*)data;
         uintptr_t dst = dtpRingBufferGetPtr(ring_buffer, head);
-        ok = ring_buffer->writeFunc(ring_buffer->user_data, src, dst, first_part);        
-        if(ok) return -1;
+        ring_buffer->error = ring_buffer->writeFunc(ring_buffer->user_data, src, dst, first_part);        
+        if (ring_buffer->error) return -1;
 
         int second_part = count - first_part;
         src = (int*)data + first_part;
         dst = dtpRingBufferGetPtr(ring_buffer, 0);
-        ok = ring_buffer->writeFunc(ring_buffer->user_data, src, dst, second_part);
-        if(ok) return -1;
+        ring_buffer->error = ring_buffer->writeFunc(ring_buffer->user_data, src, dst, second_part);
+        if (ring_buffer->error) return -1;
     }
-    dtpRingBufferProduce(ring_buffer, count);    
+    dtpRingBufferProduce(ring_buffer, count);   
+    if(ring_buffer->error) return -1; 
     //dtpRingBufferReleaseRead(ring_buffer, count);
 }
 
 int dtpRingBufferPop(DtpRingBuffer32 *ring_buffer, void *data, int count){        
     //dtpRingBufferCapturedRead(ring_buffer, count);   
     int tail = dtpRingBufferGetTail(ring_buffer);
-    int ok;
+    if(ring_buffer->error) return -1;
     if(tail % ring_buffer->capacity + count < ring_buffer->capacity){
         uintptr_t src = dtpRingBufferGetPtr(ring_buffer, tail);
         int *dst = (int*)data;    
-        ok = ring_buffer->readFunc(ring_buffer->user_data, dst, src, count);
-        if(ok) return -1;
+        ring_buffer->error = ring_buffer->readFunc(ring_buffer->user_data, dst, src, count);
+        if(ring_buffer->error) return -1;
     } else {
         int first_part = ring_buffer->capacity - tail % ring_buffer->capacity;
         uintptr_t src = dtpRingBufferGetPtr(ring_buffer, tail); 
         int *dst = (int*)data;        
-        ok = ring_buffer->readFunc(ring_buffer->user_data, dst, src, first_part);
-        if(ok) return -1;
+        ring_buffer->error = ring_buffer->readFunc(ring_buffer->user_data, dst, src, first_part);
+        if(ring_buffer->error) return -1;
 
         int second_part = count - first_part;
         src = dtpRingBufferGetPtr(ring_buffer, 0);
         dst = (int*)data + first_part;
-        ok = ring_buffer->readFunc(ring_buffer->user_data, dst, src, second_part);
-        if(ok) return -1;
+        ring_buffer->error = ring_buffer->readFunc(ring_buffer->user_data, dst, src, second_part);
+        if(ring_buffer->error) return -1;
     }
     dtpRingBufferConsume(ring_buffer, count);
+    if(ring_buffer->error) return -1;
     //dtpRingBufferReleaseWrite(ring_buffer, count);
 }
 

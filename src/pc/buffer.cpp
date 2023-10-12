@@ -63,7 +63,11 @@ static int dtpBufferImplRecv(void *com_spec, DtpAsync *cmd){
     int head, tail, available;
 
     head = dtpRingBufferGetHead(data->rb_in);
+    if( dtpRingBufferGetLastError(data->rb_in)) return DTP_ERROR;
+
     tail = dtpRingBufferGetTail(data->rb_in);
+    if( dtpRingBufferGetLastError(data->rb_in)) return DTP_ERROR;
+    
     available = head - tail;
     if(available == 0) return DTP_AGAIN;
 
@@ -90,7 +94,11 @@ static int dtpBufferImplSend(void *com_spec, DtpAsync *cmd){
     int capacity = dtpRingBufferGetCapacity(data->rb_out);
 
     head = dtpRingBufferGetHead(data->rb_out);
+    if( dtpRingBufferGetLastError(data->rb_out)) return DTP_ERROR;
+
     tail = dtpRingBufferGetTail(data->rb_out);
+    if( dtpRingBufferGetLastError(data->rb_out)) return DTP_ERROR;
+
     available = tail + capacity - head;
     if(available == 0) return DTP_AGAIN;
 
