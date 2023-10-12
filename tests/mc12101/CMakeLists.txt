@@ -21,8 +21,10 @@ add_executable(host-test host.cpp)
 target_link_directories(host-test
     PRIVATE
     $ENV{MC12101}/lib
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib
     )
-target_link_libraries(host-test PRIVATE dtp::dtp mc12101load)    
+#target_link_libraries(host-test PRIVATE dtp::dtp mc12101load)    
+target_link_libraries(host-test PRIVATE dtp-x64d mc12101load)    
 target_include_directories(host-test
     PUBLIC 
     ${CMAKE_CURRENT_LIST_DIR}/../../include

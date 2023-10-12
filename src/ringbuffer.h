@@ -34,8 +34,8 @@ extern "C" {
     void dtpRingBufferProduce(DtpRingBuffer32 *ring_buffer, int count);
 
 
-    void dtpRingBufferPush(DtpRingBuffer32 *ring_buffer, const void *data, int count);
-    void dtpRingBufferPop(DtpRingBuffer32 *ring_buffer, void *data, int count);
+    int dtpRingBufferPush(DtpRingBuffer32 *ring_buffer, const void *data, int count);
+    int dtpRingBufferPop(DtpRingBuffer32 *ring_buffer, void *data, int count);
 
     int dtpRingBufferIsEmpty(DtpRingBuffer32 *ring_buffer);
     int dtpRingBufferIsFull(DtpRingBuffer32 *ring_buffer);

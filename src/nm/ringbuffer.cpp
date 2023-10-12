@@ -87,7 +87,7 @@ void dtpRingBufferProduce(DtpRingBuffer32 *ring_buffer, int count){
     ring_buffer->head += count;
 }
 
-void dtpRingBufferPush(DtpRingBuffer32 *ring_buffer, const void *data, int count){
+int dtpRingBufferPush(DtpRingBuffer32 *ring_buffer, const void *data, int count){
     int *src = (int*)data;
     for(int i = 0; i < count; i++){
         //dtp_sem_wait(&ring_buffer->write_semaphore);
@@ -98,9 +98,10 @@ void dtpRingBufferPush(DtpRingBuffer32 *ring_buffer, const void *data, int count
         dtpRingBufferProduce(ring_buffer, 1);
         //dtp_sem_post(&ring_buffer->read_semaphore);
     }
+    return 0;
 }
 
-void dtpRingBufferPop(DtpRingBuffer32 *ring_buffer, void *data, int count){        
+int dtpRingBufferPop(DtpRingBuffer32 *ring_buffer, void *data, int count){        
     int *dst = (int*)data;
     for(int i = 0; i < count; i++){
         int read;
@@ -114,6 +115,7 @@ void dtpRingBufferPop(DtpRingBuffer32 *ring_buffer, void *data, int count){
         dtpRingBufferConsume(ring_buffer, 1);
         //dtp_sem_post(&ring_buffer->write_semaphore);
     }
+    return 0;
 }
 
 int dtpRingBufferIsEmpty(DtpRingBuffer32 *ring_buffer){
