@@ -210,10 +210,8 @@ static int dmaImplGetStatus(void *com_spec, DtpAsync *cmd){
         int status = dmaLinkStatus2DtpStatus(info->state->base_rc);
         cmd->DTP_ASYNC_PRIVATE_FIELDS.status = status;
         if(status == DTP_ST_DONE){
-            printf("done aaaa\n");
             if(cmd->callback) cmd->callback(cmd->cb_data);        
-            info->state->receive_cmd = 0;
-            info->state->transfer_cmd = 0;
+            info->state->receive_cmd = 0;            
             info->state->base_rc[CONTROL] = 0;
         }
     }
@@ -221,9 +219,7 @@ static int dmaImplGetStatus(void *com_spec, DtpAsync *cmd){
         int status = dmaLinkStatus2DtpStatus(info->state->base_tr);
         cmd->DTP_ASYNC_PRIVATE_FIELDS.status = status;
         if(status == DTP_ST_DONE){
-            printf("done aaaa\n");
-            if(cmd->callback) cmd->callback(cmd->cb_data);        
-            info->state->receive_cmd = 0;
+            if(cmd->callback) cmd->callback(cmd->cb_data);                    
             info->state->transfer_cmd = 0;    
             info->state->base_tr[CONTROL] = 0;        
         }
@@ -459,6 +455,8 @@ void __attribute__((optimize("O0"))) dmaHandlerNm6407(){
 
     dma_state.base_tr[INTERRUPT_MASK] = 3;
     dma_state.base_rc[INTERRUPT_MASK] = 3;
+    dma_state.base_tr[CONTROL] = 0;
+    dma_state.base_rc[CONTROL] = 0;
 
     int tmp = dma_state.base_tr[0];
     tmp++;
@@ -473,8 +471,12 @@ void __attribute__((optimize("O0"))) dmaHandlerNm6407(){
 
 void dmaHandlerErrorNm6407(){
     
-    dma_state.base_tr[0x0C] = 3;
-    dma_state.base_tr[0x1C] = 3;
+    dma_state.base_tr[INTERRUPT_MASK] = 3;
+    dma_state.base_rc[INTERRUPT_MASK] = 3;
+    dma_state.base_tr[CONTROL] = 0;
+    dma_state.base_rc[CONTROL] = 0;
+    dma_state.transfer_cmd = 0;
+    dma_state.receive_cmd = 0;
 
     int tmp = dma_state.base_tr[0];
     tmp++;
