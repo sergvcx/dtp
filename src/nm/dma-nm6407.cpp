@@ -165,18 +165,19 @@ static inline void dma_unlock(){
 static LinkInfo link_info;
 
 static inline void startDmaOrLink(int *base, void *buf, int size64, int row_counter64, int bias, int mode){
+    base[CONTROL] = 0;
     base[MAIN_COUNTER] = size64;    
     base[ADDRESS]      = (int)buf;
-    base[BIAS]         = bias; //(cmd->stride - (cmd->width - 2) )
+    base[BIAS]         = bias; 
     base[ROW_COUNTER]  = row_counter64;             
-    base[ADDRESS_MODE] = mode; //(cmd->type == DTP_TASK_1D) ? 0: 1;
-    base[CONTROL] = 0;
+    base[ADDRESS_MODE] = mode;    
     base[CONTROL] = 1;
 }
 
 static int dmaImplSend(void *com_spec, DtpAsync *cmd){
+    printf("%s\n", __FUNCTION__);
     DmaMode *info = (DmaMode *)com_spec;
-    if(info->state->receive_cmd || info->state->transfer_cmd) return DTP_AGAIN;
+    if(info->state->base_tr[CONTROL] & 2) return DTP_AGAIN;
 
     dma_lock();
     info->state->base_rc[INTERRUPT_MASK] = 0;
@@ -188,8 +189,9 @@ static int dmaImplSend(void *com_spec, DtpAsync *cmd){
 }
 
 static int dmaImplRecv(void *com_spec, DtpAsync *cmd){
-    DmaMode *info = (DmaMode *)com_spec; 
-    if(info->state->receive_cmd || info->state->transfer_cmd) return DTP_AGAIN;
+    printf("%s\n", __FUNCTION__);
+    DmaMode *info = (DmaMode *)com_spec;     
+    if(info->state->base_rc[CONTROL] & 2) return DTP_AGAIN;
 
     dma_lock();    
     info->state->base_rc[INTERRUPT_MASK] = 0;    
@@ -204,13 +206,26 @@ static int dmaImplRecv(void *com_spec, DtpAsync *cmd){
 static int dmaImplGetStatus(void *com_spec, DtpAsync *cmd){
     DmaMode *info = (DmaMode *)com_spec;
 
-    if(cmd == info->state->receive_cmd || cmd == info->state->transfer_cmd){        
+    if(cmd == info->state->receive_cmd){   
         int status = dmaLinkStatus2DtpStatus(info->state->base_rc);
         cmd->DTP_ASYNC_PRIVATE_FIELDS.status = status;
         if(status == DTP_ST_DONE){
+            printf("done aaaa\n");
             if(cmd->callback) cmd->callback(cmd->cb_data);        
             info->state->receive_cmd = 0;
             info->state->transfer_cmd = 0;
+            info->state->base_rc[CONTROL] = 0;
+        }
+    }
+    if(cmd == info->state->transfer_cmd){   
+        int status = dmaLinkStatus2DtpStatus(info->state->base_tr);
+        cmd->DTP_ASYNC_PRIVATE_FIELDS.status = status;
+        if(status == DTP_ST_DONE){
+            printf("done aaaa\n");
+            if(cmd->callback) cmd->callback(cmd->cb_data);        
+            info->state->receive_cmd = 0;
+            info->state->transfer_cmd = 0;    
+            info->state->base_tr[CONTROL] = 0;        
         }
     }
 
@@ -472,13 +487,18 @@ void dmaHandlerErrorNm6407(){
 
 static inline int dmaLinkStatus2DtpStatus(int *base){    
     int status = base[CONTROL];
+    //printf("status %x\n", status);
     if(status & 4){
-        base[CONTROL] = base[CONTROL] & 0xB;
+        //base[CONTROL] = base[CONTROL] & 0xB;
         return DTP_ST_ERROR;
     } 
     if(status & 2){       
         return DTP_ST_DONE; 
     }
+    if(status & 1){
+        return DTP_ST_IN_PROCESS;
+    }
+    //return DTP_ST_ERROR;
     return DTP_ST_IN_PROCESS;
 }
 
