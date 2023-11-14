@@ -74,13 +74,13 @@ extern "C"{
     //     return dtpOpenCustom(dtp_objects[no].com_spec, &dtp_objects[no].implementaion);
     // }
 
-    int dtpSend(int desc, const void *data, size_t size){
+    int dtpSend(int desc, const void *data, size_t size){        
         DtpAsync task;        
         task.buf = (volatile void*)data;
         task.nwords = size;
         task.callback = 0;
         task.type = DTP_TASK_1D;
-        int error = dtpAsyncSend(desc, &task);
+        int error = dtpAsyncSend(desc, &task);        
         if(error) return error;
         return dtpAsyncWait(desc, &task);
     }
@@ -97,7 +97,7 @@ extern "C"{
     }
 
 	int dtpSendM(int desc, const void *data, size_t size, int width, int stride){
-        DtpAsync task;
+        DtpAsync task;        
         int status = DTP_ST_IN_PROCESS;
         task.buf = (volatile void*)data;
         task.nwords = size;
@@ -190,7 +190,7 @@ extern "C"{
     int dtpAsyncWait(int desc, DtpAsync *task){         
         int error = 0;
         while(1){
-            error = dtpAsyncStatus(desc, task);            
+            error = dtpAsyncStatus(desc, task);                        
             if(error == DTP_ST_ERROR) return DTP_ERROR;
             if(error == DTP_ST_DONE) return DTP_OK;
         };
