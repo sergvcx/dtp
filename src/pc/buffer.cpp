@@ -29,7 +29,8 @@ struct RemoteSharedBufferData{
 
             int pop_size = (available > size) ? size : available;
             if(pop_size){
-                dtpRingBufferPop(ringbuffer, data, pop_size);                    
+                int ok = dtpRingBufferPop(ringbuffer, data, pop_size);                    
+                if(ok) return -1;
                 data += pop_size;
                 size -= pop_size;
             }
@@ -46,7 +47,8 @@ struct RemoteSharedBufferData{
 
             int push_size = (available > size) ? size : available;
             if(push_size){
-                dtpRingBufferPush(ringbuffer, data, push_size);
+                int ok = dtpRingBufferPush(ringbuffer, data, push_size);
+                if(ok) return -1;
                 data += push_size;
                 size -= push_size;
             }   
@@ -61,14 +63,23 @@ static int dtpBufferImplRecv(void *com_spec, DtpAsync *cmd){
     int head, tail, available;
 
     head = dtpRingBufferGetHead(data->rb_in);
+    if( dtpRingBufferGetLastError(data->rb_in)) return DTP_ERROR;
+
     tail = dtpRingBufferGetTail(data->rb_in);
+    if( dtpRingBufferGetLastError(data->rb_in)) return DTP_ERROR;
+    
     available = head - tail;
     if(available == 0) return DTP_AGAIN;
 
     if(cmd->type == DTP_TASK_1D){            
-        blockingPop(data->rb_in, dst, size);
+        int ok = blockingPop(data->rb_in, dst, size);
+        if(ok < 0) {
+            cmd->DTP_ASYNC_PRIVATE_FIELDS.status = DTP_ST_ERROR;
+            return DTP_ERROR;
+        }
         if(cmd->callback) cmd->callback(cmd->cb_data);
     } else {
+        cmd->DTP_ASYNC_PRIVATE_FIELDS.status = DTP_ST_ERROR;
         return DTP_ERROR;
     }    
     return DTP_OK;
@@ -83,14 +94,23 @@ static int dtpBufferImplSend(void *com_spec, DtpAsync *cmd){
     int capacity = dtpRingBufferGetCapacity(data->rb_out);
 
     head = dtpRingBufferGetHead(data->rb_out);
+    if( dtpRingBufferGetLastError(data->rb_out)) return DTP_ERROR;
+
     tail = dtpRingBufferGetTail(data->rb_out);
+    if( dtpRingBufferGetLastError(data->rb_out)) return DTP_ERROR;
+
     available = tail + capacity - head;
     if(available == 0) return DTP_AGAIN;
 
     if(cmd->type == DTP_TASK_1D){
-        blockingPush(data->rb_out, src, size);
+        int ok = blockingPush(data->rb_out, src, size);
+        if(ok < 0) {
+            cmd->DTP_ASYNC_PRIVATE_FIELDS.status = DTP_ST_ERROR;
+            return DTP_ERROR;
+        }
         if(cmd->callback) cmd->callback(cmd->cb_data);
     } else {
+        cmd->DTP_ASYNC_PRIVATE_FIELDS.status = DTP_ST_ERROR;
         return DTP_ERROR;
     }    
     return 0;

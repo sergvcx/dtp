@@ -7,6 +7,8 @@
 
 #include "ringbuffer.h"
 
+#include "assert.h"
+
 
 struct PloadData{
     PL_Access *access;
@@ -185,13 +187,15 @@ struct BoardData{
 
 extern "C"{
     static void *rbMemCopyPop(const void *src, void *dst, unsigned int size32){
-        PL_ReadMemBlock(global_access, (PL_Word *)dst, (PL_Addr)src, size32);
+        int ok = PL_ReadMemBlock(global_access, (PL_Word *)dst, (PL_Addr)src, size32);
+        assert(ok == 0);
         return 0;
     }
 
 
     static void *rbMemCopyPush(const void *src, void *dst, unsigned int size32){
-        PL_WriteMemBlock(global_access, (PL_Word *)src, (PL_Addr)dst, size32);
+        int ok = PL_WriteMemBlock(global_access, (PL_Word *)src, (PL_Addr)dst, size32);
+        assert(ok == 0);
         return 0;
     }
 }

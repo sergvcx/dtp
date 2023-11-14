@@ -73,19 +73,20 @@ static int dmaStartTaskSingle(int *base, DtpAsync *cmd);
 
 
 static inline int dmaLinkStatus2DtpStatus(int *base);
-static inline void startDmaOrLink(int *base, void *buf, int size64, int row_counter64, int bias64, int mode);
+static inline void startDmaOrLink(int *base, void *buf, int size64, int row_counter64, int bias, int mode);
 
 static inline int *nm6407MapAddr(int *addr){
     // mapped addr when inner memory
     int no = (*(int*)0x40000000) >> 24;
     int offset = (   (no) == 0) ? 0x40000: 0x80000;
-    addr = ( (int)addr < 0xA0000 ) ? addr + offset: addr;
+    addr = ( (int)addr < 0x40000 ) ? addr + offset: addr;
     return addr;
 }
 
 static int dmaStartTask(int *base, DtpAsync *cmd){
     int size64 = cmd->nwords >> 1;
-    int bias64 = (cmd->stride - (cmd->width - 2) ) >> 1;
+    //int bias = (cmd->stride - (cmd->width - 2) ) >> 1;
+    int bias = (cmd->stride - (cmd->width - 2) );
     int row_counter64 = cmd->width >> 1;
     int mode = (cmd->type == DTP_TASK_1D) ? 0: 1;
 
@@ -95,18 +96,19 @@ static int dmaStartTask(int *base, DtpAsync *cmd){
     NMASSERT(  ( (int)addr & 0xF ) == 0);           // due to DMA error address should be a multiple 16
     NMASSERT(  ( size64 & 0x7 ) == 0);        // due to DMA error size64 should be a multiple 8
     if(mode == 1){
-        NMASSERT(  ( bias64 & 0xF) == 2);          // due to DMA error bias should be a multiple 16 with remainder of 2
+        NMASSERT(  ( bias & 0xF) == 2);          // due to DMA error bias should be a multiple 16 with remainder of 2
         NMASSERT(  ( row_counter64 & 0x7) == 0);   // due to DMA error size64 should be a multiple 8
     }
 #endif //NDEBUG
 
-    startDmaOrLink(base, addr, size64, row_counter64, bias64, mode);
+    startDmaOrLink(base, addr, size64, row_counter64, bias, mode);
     return DTP_OK;
 }
 
 static int dmaStartTaskWithCheck(int *base, DtpAsync *cmd){
     int size64 = cmd->nwords >> 1;
-    int bias64 = (cmd->stride - (cmd->width - 2) ) >> 1;
+    //int bias = (cmd->stride - (cmd->width - 2) ) >> 1;
+    int bias = (cmd->stride - (cmd->width - 2) );
     int row_counter64 = cmd->width >> 1;
     int mode = (cmd->type == DTP_TASK_1D) ? ADDRESS_MODE_1D: ADDRESS_MODE_2D;
 
@@ -115,24 +117,24 @@ static int dmaStartTaskWithCheck(int *base, DtpAsync *cmd){
     if( ( (int)addr & 0xF ) != 0) return DTP_ERROR;
     if( ( size64 & 0x7 ) != 0) return DTP_ERROR;
     if(mode == ADDRESS_MODE_2D){
-        if( ( bias64 & 0xF ) != 2) return DTP_ERROR;
+        if( ( bias & 0xF ) != 2) return DTP_ERROR;
         if( ( row_counter64 & 0x7 ) != 0) return DTP_ERROR;
     }
 
-    startDmaOrLink(base, addr, size64, row_counter64, bias64, mode);
+    startDmaOrLink(base, addr, size64, row_counter64, bias, mode);
 
     return DTP_OK;
 }
 
 static int dmaStartTaskSingle(int *base, DtpAsync *cmd){
     int size64 = cmd->nwords >> 1;
-    int bias64 = 2;
+    int bias = 2;
     int row_counter64 = 1;
     int mode = 1;
 
     int *addr = nm6407MapAddr((int *) cmd->buf);
 
-    startDmaOrLink(base, (void *)cmd->buf, size64, row_counter64, bias64, mode);
+    startDmaOrLink(base, (void *)cmd->buf, size64, row_counter64, bias, mode);
 
     return DTP_OK;
 }
@@ -162,18 +164,20 @@ static inline void dma_unlock(){
 
 static LinkInfo link_info;
 
-static inline void startDmaOrLink(int *base, void *buf, int size64, int row_counter64, int bias64, int mode){
+static inline void startDmaOrLink(int *base, void *buf, int size64, int row_counter64, int bias, int mode){
+    base[CONTROL] = 0;
     base[MAIN_COUNTER] = size64;    
     base[ADDRESS]      = (int)buf;
-    base[BIAS]         = bias64; //(cmd->stride - (cmd->width - 2) ) >> 1;        
+    base[BIAS]         = bias; 
     base[ROW_COUNTER]  = row_counter64;             
-    base[ADDRESS_MODE] = mode; //(cmd->type == DTP_TASK_1D) ? 0: 1;
-    base[CONTROL] = 0;
+    base[ADDRESS_MODE] = mode;    
     base[CONTROL] = 1;
 }
 
 static int dmaImplSend(void *com_spec, DtpAsync *cmd){
+    printf("%s\n", __FUNCTION__);
     DmaMode *info = (DmaMode *)com_spec;
+    if(info->state->base_tr[CONTROL] & 2) return DTP_AGAIN;
 
     dma_lock();
     info->state->base_rc[INTERRUPT_MASK] = 0;
@@ -185,7 +189,9 @@ static int dmaImplSend(void *com_spec, DtpAsync *cmd){
 }
 
 static int dmaImplRecv(void *com_spec, DtpAsync *cmd){
-    DmaMode *info = (DmaMode *)com_spec;    
+    printf("%s\n", __FUNCTION__);
+    DmaMode *info = (DmaMode *)com_spec;     
+    if(info->state->base_rc[CONTROL] & 2) return DTP_AGAIN;
 
     dma_lock();    
     info->state->base_rc[INTERRUPT_MASK] = 0;    
@@ -200,13 +206,22 @@ static int dmaImplRecv(void *com_spec, DtpAsync *cmd){
 static int dmaImplGetStatus(void *com_spec, DtpAsync *cmd){
     DmaMode *info = (DmaMode *)com_spec;
 
-    if(cmd == info->state->receive_cmd || cmd == info->state->transfer_cmd){        
-        int status = dmaLinkStatus2DtpStatus(info->state->base_rc);        
+    if(cmd == info->state->receive_cmd){   
+        int status = dmaLinkStatus2DtpStatus(info->state->base_rc);
         cmd->DTP_ASYNC_PRIVATE_FIELDS.status = status;
-        if(status == DTP_ST_DONE && cmd->callback){            
-            cmd->callback(cmd->cb_data);
-            if(cmd == info->state->receive_cmd) info->state->receive_cmd = 0;
-            if(cmd == info->state->transfer_cmd) info->state->transfer_cmd = 0;
+        if(status == DTP_ST_DONE){
+            if(cmd->callback) cmd->callback(cmd->cb_data);        
+            info->state->receive_cmd = 0;            
+            info->state->base_rc[CONTROL] = 0;
+        }
+    }
+    if(cmd == info->state->transfer_cmd){   
+        int status = dmaLinkStatus2DtpStatus(info->state->base_tr);
+        cmd->DTP_ASYNC_PRIVATE_FIELDS.status = status;
+        if(status == DTP_ST_DONE){
+            if(cmd->callback) cmd->callback(cmd->cb_data);                    
+            info->state->transfer_cmd = 0;    
+            info->state->base_tr[CONTROL] = 0;        
         }
     }
 
@@ -250,12 +265,14 @@ static int linkImplRecv(void *com_spec, DtpAsync *cmd){
 
 static int linkImplGetStatus(void *com_spec, DtpAsync *cmd){
     LinkInfo *info = (LinkInfo *)com_spec;
-
+    int status;
     if(cmd == info->currentReceive){
-        return dmaLinkStatus2DtpStatus(info->base_rc);
+        status = dmaLinkStatus2DtpStatus(info->base_rc);
+        return status;
     }
-    if(cmd == info->currentTransfer){
-        return dmaLinkStatus2DtpStatus(info->base_tr);
+    if(cmd == info->currentTransfer){        
+        status = dmaLinkStatus2DtpStatus(info->base_rc);
+        return status;
     }
     return DTP_ST_ERROR;
 }
@@ -438,6 +455,8 @@ void __attribute__((optimize("O0"))) dmaHandlerNm6407(){
 
     dma_state.base_tr[INTERRUPT_MASK] = 3;
     dma_state.base_rc[INTERRUPT_MASK] = 3;
+    dma_state.base_tr[CONTROL] = 0;
+    dma_state.base_rc[CONTROL] = 0;
 
     int tmp = dma_state.base_tr[0];
     tmp++;
@@ -452,8 +471,12 @@ void __attribute__((optimize("O0"))) dmaHandlerNm6407(){
 
 void dmaHandlerErrorNm6407(){
     
-    dma_state.base_tr[0x0C] = 3;
-    dma_state.base_tr[0x1C] = 3;
+    dma_state.base_tr[INTERRUPT_MASK] = 3;
+    dma_state.base_rc[INTERRUPT_MASK] = 3;
+    dma_state.base_tr[CONTROL] = 0;
+    dma_state.base_rc[CONTROL] = 0;
+    dma_state.transfer_cmd = 0;
+    dma_state.receive_cmd = 0;
 
     int tmp = dma_state.base_tr[0];
     tmp++;
@@ -466,12 +489,18 @@ void dmaHandlerErrorNm6407(){
 
 static inline int dmaLinkStatus2DtpStatus(int *base){    
     int status = base[CONTROL];
+    //printf("status %x\n", status);
     if(status & 4){
+        //base[CONTROL] = base[CONTROL] & 0xB;
         return DTP_ST_ERROR;
     } 
-    if(status & 2){        
+    if(status & 2){       
         return DTP_ST_DONE; 
     }
+    if(status & 1){
+        return DTP_ST_IN_PROCESS;
+    }
+    //return DTP_ST_ERROR;
     return DTP_ST_IN_PROCESS;
 }
 
