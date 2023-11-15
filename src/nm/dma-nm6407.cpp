@@ -177,7 +177,6 @@ static inline void startDmaOrLink(int *base, void *buf, int size64, int row_coun
 }
 
 static int dmaImplSend(void *com_spec, DtpAsync *cmd){
-    printf("%s\n", __FUNCTION__);
     DmaMode *info = (DmaMode *)com_spec;
     if(info->state->base_tr[CONTROL] & 2) return DTP_AGAIN;
 
@@ -191,7 +190,6 @@ static int dmaImplSend(void *com_spec, DtpAsync *cmd){
 }
 
 static int dmaImplRecv(void *com_spec, DtpAsync *cmd){
-    printf("%s\n", __FUNCTION__);
     DmaMode *info = (DmaMode *)com_spec;     
     if(info->state->base_rc[CONTROL] & 2) return DTP_AGAIN;
 
