@@ -282,7 +282,7 @@ static int linkImplGetStatus(void *com_spec, DtpAsync *cmd){
             info->current_cmd = 0;  
         }
     }    
-    printf("status: %d\n", cmd->DTP_ASYNC_PRIVATE_FIELDS.status);
+    //printf("status: %d\n", cmd->DTP_ASYNC_PRIVATE_FIELDS.status);
     return cmd->DTP_ASYNC_PRIVATE_FIELDS.status;
 }
 
