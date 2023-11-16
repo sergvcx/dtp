@@ -91,8 +91,7 @@ static int dmaStartTask(int *base, DtpAsync *cmd){
     int row_counter64 = cmd->width >> 1;
     int mode = (cmd->type == DTP_TASK_1D) ? 0: 1;
 
-    //int *addr = nm6407MapAddr((int *) cmd->buf);
-    int *addr = (int*)cmd->buf;
+    int *addr = nm6407MapAddr((int *) cmd->buf);    
 
 #ifndef NDEBUG    
     NMASSERT(  ( (int)addr & 0xF ) == 0);           // due to DMA error address should be a multiple 16
@@ -101,6 +100,23 @@ static int dmaStartTask(int *base, DtpAsync *cmd){
         NMASSERT(  ( bias & 0xF) == 2);          // due to DMA error bias should be a multiple 16 with remainder of 2
         NMASSERT(  ( row_counter64 & 0x7) == 0);   // due to DMA error size64 should be a multiple 8
     }
+#endif //NDEBUG
+
+    startDmaOrLink(base, addr, size64, row_counter64, bias, mode);
+    return DTP_OK;
+}
+
+static int linkStartTask(int *base, DtpAsync *cmd){
+    int size64 = cmd->nwords >> 1;
+    //int bias = (cmd->stride - (cmd->width - 2) ) >> 1;
+    int bias = (cmd->stride - (cmd->width - 2) );
+    int row_counter64 = cmd->width >> 1;
+    int mode = (cmd->type == DTP_TASK_1D) ? 0: 1;
+    
+    int *addr = (int*)cmd->buf;
+
+#ifndef NDEBUG    
+    NMASSERT(( (int)addr & 0xF ) < 0x40000);    
 #endif //NDEBUG
 
     startDmaOrLink(base, addr, size64, row_counter64, bias, mode);
@@ -251,7 +267,7 @@ static int linkImplSend(void *com_spec, DtpAsync *cmd){
     
 
     //static inline void startDmaOrLink(int *base, void *buf, int size64, int row_counter64, int bias, int mode);
-    dmaStartTask(info->base, cmd);
+    linkStartTask(info->base, cmd);
     
     return DTP_OK;
 }
@@ -265,7 +281,7 @@ static int linkImplRecv(void *com_spec, DtpAsync *cmd){
 
     info->base[INTERRUPT_MASK] = 0;        
     info->current_cmd = cmd;
-    dmaStartTask(info->base, cmd);
+    linkStartTask(info->base, cmd);
     
     return DTP_OK;
 }
