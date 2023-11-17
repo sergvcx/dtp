@@ -21,9 +21,9 @@ typedef enum{
 } DtpError;
 
 typedef enum {
-    DTP_TASK_NONE,
-    DTP_TASK_1D,
-    DTP_TASK_2D
+    DTP_TASK_NONE = -1,
+    DTP_TASK_1D = 0,
+    DTP_TASK_2D = 1
 } DtpAsyncType;
 
 /**
