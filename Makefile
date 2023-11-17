@@ -1,4 +1,4 @@
-build: build_nm build_x86 update
+build: build_nm build_x86
 
 setenv:
 	setx DTP "%CD%"
